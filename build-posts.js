@@ -19,17 +19,17 @@ try {
                 const post = { filename: file };
                 
                 lines.forEach(line => {
-                    if (line.includes('title:')) {
-                        post.title = line.split('title:')[1].trim().replace(/"/g, '');
+                    if (line.includes('|title:')) {
+                        post.title = line.split('|title:')[1].trim().replace(/"/g, '');
                     }
-                    if (line.includes('date:')) {
-                        const dateStr = line.split('date:')[1].trim();
+                    if (line.includes('|date:')) {
+                        const dateStr = line.split('|date:')[1].trim();
                         // Convert datetime to just date
                         const date = new Date(dateStr);
                         post.date = date.toISOString().split('T')[0]; // Gets YYYY-MM-DD format
                     }
-                    if (line.includes('description:')) {
-                        post.description = line.split('description:')[1].trim().replace(/"/g, '');
+                    if (line.includes('|description:')) {
+                        post.description = line.split('|description:')[1].trim().replace(/"/g, '');
                     }
                 });
                 
