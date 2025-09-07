@@ -1,5 +1,6 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: Bearmeadow92/NextGenBlog
   branch: main
 
 media_folder: "images"
