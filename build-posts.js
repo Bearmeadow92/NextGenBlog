@@ -10,18 +10,30 @@ try {
         if (file.endsWith('.md')) {
             const content = fs.readFileSync(`./posts/${file}`, 'utf8');
             
-            // Extract title, date, description from the markdown
-            const titleMatch = content.match(/title:\s*"?([^"]*)"?/);
-            const dateMatch = content.match(/date:\s*([^\n]*)/);
-            const descMatch = content.match(/description:\s*"?([^"]*)"?/);
+            // Extract frontmatter (the stuff between --- and ---)
+            const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
             
-            if (titleMatch && dateMatch && descMatch) {
-                posts.push({
-                    title: titleMatch[1].trim(),
-                    date: dateMatch[1].trim(),
-                    description: descMatch[1].trim(),
-                    filename: file
+            if (frontmatterMatch) {
+                const frontmatter = frontmatterMatch[1];
+                const lines = frontmatter.split('\n');
+                const post = { filename: file };
+                
+                lines.forEach(line => {
+                    if (line.includes('title:')) {
+                        post.title = line.split('title:')[1].trim().replace(/"/g, '');
+                    }
+                    if (line.includes('date:')) {
+                        post.date = line.split('date:')[1].trim();
+                    }
+                    if (line.includes('description:')) {
+                        post.description = line.split('description:')[1].trim().replace(/"/g, '');
+                    }
                 });
+                
+                // Only add posts that have all required fields
+                if (post.title && post.date && post.description) {
+                    posts.push(post);
+                }
             }
         }
     });
