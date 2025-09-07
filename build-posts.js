@@ -23,7 +23,10 @@ try {
                         post.title = line.split('title:')[1].trim().replace(/"/g, '');
                     }
                     if (line.includes('date:')) {
-                        post.date = line.split('date:')[1].trim();
+                        const dateStr = line.split('date:')[1].trim();
+                        // Convert datetime to just date
+                        const date = new Date(dateStr);
+                        post.date = date.toISOString().split('T')[0]; // Gets YYYY-MM-DD format
                     }
                     if (line.includes('description:')) {
                         post.description = line.split('description:')[1].trim().replace(/"/g, '');
