@@ -67,5 +67,38 @@ async function loadBlogPosts() {
     }
 }
 
+// Load latest blog post for home page preview
+async function loadLatestPost() {
+    try {
+        const response = await fetch('/posts.json');
+        const posts = await response.json();
+        
+        const latestPostContainer = document.getElementById('latest-post-container');
+        
+        if (posts.length === 0) {
+            latestPostContainer.innerHTML = '<p>No posts yet.</p>';
+            return;
+        }
+        
+        const latestPost = posts[0]; // First post is newest due to sorting
+        
+        latestPostContainer.innerHTML = `
+            <article class="latest-post-card">
+                <h3>${latestPost.title}</h3>
+                <p class="post-date">${new Date(latestPost.date).toLocaleDateString()}</p>
+                <p class="post-description">${latestPost.description}</p>
+                <button class="read-more" onclick="loadBlogPost('${latestPost.filename}')">Read Full Post →</button>
+            </article>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading latest post:', error);
+        document.getElementById('latest-post-container').innerHTML = '<p>Error loading latest post.</p>';
+    }
+}
+
 // Load posts when page loads
-document.addEventListener('DOMContentLoaded', loadBlogPosts);
+document.addEventListener('DOMContentLoaded', function() {
+    loadBlogPosts();
+    loadLatestPost();
+});
