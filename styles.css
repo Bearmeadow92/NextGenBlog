@@ -332,3 +332,117 @@ p {
 #blog-post-content li {
     margin-bottom: 0.5rem;
 }
+
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    /* Navigation adjustments */
+    nav {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .nav-links {
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .nav-links a {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Home section mobile */
+    #home {
+        padding: 4rem 1rem;
+    }
+    
+    #home h1 {
+        font-size: 2.5rem;
+        line-height: 1.2;
+    }
+    
+    #home p {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .cta-button {
+        padding: 10px 24px;
+        font-size: 1rem;
+    }
+    
+    /* Section adjustments */
+    .section {
+        padding: 2rem 1rem;
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    h2 {
+        font-size: 1.6rem;
+    }
+    
+    /* Blog posts mobile */
+    .blog-post {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .blog-post h3 {
+        font-size: 1.3rem;
+    }
+    
+    /* Blog post viewer mobile */
+    .blog-post-container {
+        padding: 1rem;
+    }
+    
+    #blog-post-content {
+        padding: 2rem 1.5rem;
+    }
+    
+    #blog-post-content h1 {
+        font-size: 2rem;
+    }
+    
+    #blog-post-content h2 {
+        font-size: 1.5rem;
+    }
+    
+    #blog-post-content p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .nav-links {
+        gap: 0.5rem;
+    }
+    
+    .nav-links a {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+    
+    #home h1 {
+        font-size: 2rem;
+    }
+    
+    #home p {
+        font-size: 1rem;
+    }
+    
+    .blog-post {
+        padding: 1rem;
+    }
+    
+    #blog-post-content {
+        padding: 1.5rem 1rem;
+    }
+}
