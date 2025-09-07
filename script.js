@@ -1,23 +1,29 @@
-// Simple function to display blog posts
-function loadBlogPosts() {
-    const postsContainer = document.getElementById('posts-container');
-    
-    // For now, we'll manually add the sample post
-    const samplePost = {
-        title: "Welcome to NextGenBlog",
-        date: "March 20, 2024", 
-        description: "My first blog post on my new website",
-        content: "This is my first post. I built this website myself and I'm pretty excited about it."
-    };
-    
-    postsContainer.innerHTML = `
-        <article class="blog-post">
-            <h3>${samplePost.title}</h3>
-            <p class="post-date">${samplePost.date}</p>
-            <p class="post-description">${samplePost.description}</p>
-            <p>${samplePost.content}</p>
-        </article>
-    `;
+// Load blog posts from JSON index
+async function loadBlogPosts() {
+    try {
+        const response = await fetch('/posts.json');
+        const posts = await response.json();
+        
+        const postsContainer = document.getElementById('posts-container');
+        
+        if (posts.length === 0) {
+            postsContainer.innerHTML = '<p>No posts yet. Check back soon!</p>';
+            return;
+        }
+        
+        postsContainer.innerHTML = posts.map(post => `
+            <article class="blog-post">
+                <h3>${post.title}</h3>
+                <p class="post-date">${new Date(post.date).toLocaleDateString()}</p>
+                <p class="post-description">${post.description}</p>
+                <a href="/posts/${post.filename}" class="read-more">Read more →</a>
+            </article>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        document.getElementById('posts-container').innerHTML = '<p>Error loading posts.</p>';
+    }
 }
 
 // Load posts when page loads
