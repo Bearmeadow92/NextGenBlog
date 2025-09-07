@@ -1,8 +1,14 @@
 [
-    {
-        "title": "My First Post.",
-        "date": "2025-09-07",
-        "description": "This is Awesome.",
-        "filename": "2025-09-07-my-first-post.md"
-    }
+  {
+    "title": "Anotha one!",
+    "date": "2025-09-07T15:46:37.614Z",
+    "description": "TESTING CRUD\r\n---\r\nO﻿H this works. :)",
+    "filename": "2025-09-07-anotha-one.md"
+  },
+  {
+    "title": "My First Post.\r\ndate: 2025-09-07T00:20:15.316Z\r\ndescription: This is Awesome.\r\n---\r\nI﻿ created a website today. ClaudeAI Helped me here but Its further than I have ever gotten.",
+    "date": "2025-09-07T00:20:15.316Z",
+    "description": "This is Awesome.\r\n---\r\nI﻿ created a website today. ClaudeAI Helped me here but Its further than I have ever gotten.",
+    "filename": "2025-09-07-my-first-post.md"
+  }
 ]
