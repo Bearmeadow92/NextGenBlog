@@ -7,7 +7,7 @@
     --accent-color: #40a9ff; /* Light blue accent */
     --dark-bg: #1a1a1a; /* Softer black instead of deep black */
     --dark-surface: #2d2d30; /* Warmer gray for cards */
-    --text-light: #cccccc; /* Softer white text */
+    --text-light: #ffffff; /* Softer white text */
     --text-muted: #969696; /* Warmer gray text */
     --border-color: #3c3c3c; /* Subtle borders */
     --gradient: linear-gradient(135deg, #007acc 0%, #40a9ff 100%);
