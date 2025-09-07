@@ -10,7 +10,33 @@ function showSection(sectionName) {
     // Update navigation active state
     const navLinks = document.querySelectorAll('.nav-links a');
     navLinks.forEach(link => link.classList.remove('active'));
-    event.target.classList.add('active');
+    
+    // Find the clicked nav link and make it active
+    const targetLink = document.querySelector(`[onclick="showSection('${sectionName}')"]`);
+    if (targetLink) {
+        targetLink.classList.add('active');
+    }
+}
+
+// Load and display a single blog post
+async function loadBlogPost(filename) {
+    try {
+        const response = await fetch(`/posts/${filename}`);
+        const markdownContent = await response.text();
+        
+        // Parse markdown to HTML
+        const htmlContent = marked.parse(markdownContent);
+        
+        // Display in blog post section
+        document.getElementById('blog-post-content').innerHTML = htmlContent;
+        
+        // Show the blog post section
+        showSection('blog-post');
+        
+    } catch (error) {
+        console.error('Error loading blog post:', error);
+        document.getElementById('blog-post-content').innerHTML = '<p>Error loading post.</p>';
+    }
 }
 
 // Load blog posts from JSON index
@@ -31,7 +57,7 @@ async function loadBlogPosts() {
                 <h3>${post.title}</h3>
                 <p class="post-date">${new Date(post.date).toLocaleDateString()}</p>
                 <p class="post-description">${post.description}</p>
-                <a href="/posts/${post.filename}" class="read-more">Read more →</a>
+                <button class="read-more" onclick="loadBlogPost('${post.filename}')">Read more →</button>
             </article>
         `).join('');
         
