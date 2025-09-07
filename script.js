@@ -1,3 +1,18 @@
+// Navigation functionality
+function showSection(sectionName) {
+    // Hide all sections
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(section => section.classList.remove('active'));
+    
+    // Show target section
+    document.getElementById(sectionName).classList.add('active');
+    
+    // Update navigation active state
+    const navLinks = document.querySelectorAll('.nav-links a');
+    navLinks.forEach(link => link.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
 // Load blog posts from JSON index
 async function loadBlogPosts() {
     try {

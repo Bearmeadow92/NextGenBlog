@@ -38,20 +38,27 @@ nav {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     transition: background-color 0.3s;
+    cursor: pointer;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-links a.active {
     background-color: #34495e;
 }
 
-/* Section styling */
-section {
+/* Section Management */
+.section {
+    display: none;
     padding: 4rem 2rem;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Make sections visually distinct */
+.section.active {
+    display: block;
+}
+
+/* Section styling */
 section:nth-child(odd) {
     background-color: #f8f9fa;
 }
@@ -109,4 +116,14 @@ p {
     color: #34495e;
     font-weight: 500;
     margin-bottom: 1rem;
+}
+
+.read-more {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.read-more:hover {
+    text-decoration: underline;
 }
