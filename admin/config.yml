@@ -13,7 +13,7 @@ collections:
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
-      - {label: "Title", name: "title", widget: "string", hint: "Enter your post title"}
-      - {label: "Publish Date", name: "date", widget: "date", format: "YYYY-MM-DD", hint: "Publication date"}
-      - {label: "Description", name: "description", widget: "text", hint: "Brief summary for the blog list"}
+      - {label: "Title", name: "|title", widget: "string", hint: "Enter your post title"}
+      - {label: "Publish Date", name: "|date", widget: "date", format: "YYYY-MM-DD", hint: "Publication date"}
+      - {label: "Description", name: "|description", widget: "text", hint: "Brief summary for the blog list"}
       - {label: "Body", name: "body", widget: "markdown"}
