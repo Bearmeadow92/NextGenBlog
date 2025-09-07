@@ -6,9 +6,11 @@ backend:
 media_folder: "images"
 public_folder: "/images"
 
-# Add these theme settings
+# Better interface settings
 editor:
-  preview: false
+  preview: true
+show_preview_links: true
+display_url: https://nextgentechnologist.com
 
 collections:
   - name: "blog"
@@ -16,6 +18,8 @@ collections:
     folder: "posts"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    editor:
+      preview: true
     fields:
       - {label: "Title", name: "title", widget: "string", hint: "Enter your post title"}
       - {label: "Publish Date", name: "date", widget: "date", format: "YYYY-MM-DD", hint: "Publication date"}
