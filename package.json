@@ -2,10 +2,24 @@
     "name": "nextgenblog",
     "version": "1.0.0",
     "scripts": {
+        "dev": "nodemon server.js",
+        "start": "node server.js",
         "build": "node build-posts.js"
     },
+    "dependencies": {
+        "express": "^4.18.2",
+        "dotenv": "^16.3.1",
+        "cors": "^2.8.5",
+        "helmet": "^7.0.0",
+        "express-rate-limit": "^6.10.0",
+        "jsonwebtoken": "^9.0.2",
+        "axios": "^1.5.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    },
     "description": "",
-    "main": "build-posts.js",
+    "main": "server.js",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Bearmeadow92/NextGenBlog.git"

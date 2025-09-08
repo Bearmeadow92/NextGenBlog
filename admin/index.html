@@ -1,30 +1,72 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NextGenBlog Admin</title>
-    <style>
-        /* Custom admin styling to match your site */
-        .css-1x7bb2j-SiteWrapper {
-        background-color: #1a1a1a !important;
-        }
-        
-        .css-12yh5hj-AppHeader {
-        background-color: #1a1a1a !important;
-        border-bottom: 1px solid #3c3c3c !important;
-        }
-        
-        .css-1ihbkkx-AppHeaderContent h1 {
-        color: #007acc !important;
-        }
-        
-        .css-1x9vh0l-SidebarContainer {
-        background-color: #2d2d30 !important;
-        }
-    </style>
+    <link rel="stylesheet" href="/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
+    <div id="app">
+        <!-- Login screen (shown when not authenticated) -->
+        <div id="login-screen" class="login-container">
+            <div class="login-card">
+                <h1>NextGenBlog Admin</h1>
+                <p>Secure admin access for your blog</p>
+                <button id="github-login" class="login-btn">
+                    Login with GitHub
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin dashboard (shown when authenticated) -->
+        <div id="admin-dashboard" class="dashboard" style="display: none;">
+            <header class="admin-header">
+                <h1>NextGenBlog Admin</h1>
+                <div class="admin-nav">
+                    <button class="nav-btn active" data-view="posts">Posts</button>
+                    <button class="nav-btn" data-view="new-post">New Post</button>
+                    <button class="nav-btn" data-view="settings">Settings</button>
+                    <button id="logout-btn" class="logout-btn">Logout</button>
+                </div>
+            </header>
+
+            <main class="admin-main">
+                <!-- Posts view -->
+                <div id="posts-view" class="admin-view">
+                    <h2>Manage Posts</h2>
+                    <div id="posts-list">
+                        Loading posts...
+                    </div>
+                </div>
+
+                <!-- New post view -->
+                <div id="new-post-view" class="admin-view" style="display: none;">
+                    <h2>Create New Post</h2>
+                    <form id="post-form" class="post-form">
+                        <input type="text" id="post-title" placeholder="Post Title" required>
+                        <input type="date" id="post-date" required>
+                        <textarea id="post-description" placeholder="Brief description" required></textarea>
+                        <textarea id="post-content" placeholder="Write your post content in Markdown..." required></textarea>
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn">Publish Post</button>
+                            <button type="button" class="preview-btn">Preview</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Settings view -->
+                <div id="settings-view" class="admin-view" style="display: none;">
+                    <h2>Settings</h2>
+                    <p>Settings and configuration options coming soon...</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/admin.js"></script>
 </body>
 </html>

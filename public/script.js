@@ -1,4 +1,4 @@
-// Navigation functionality
+// Navigation functionality - updated to use event listeners
 function showSection(sectionName) {
     // Hide all sections
     const sections = document.querySelectorAll('.section');
@@ -12,11 +12,38 @@ function showSection(sectionName) {
     navLinks.forEach(link => link.classList.remove('active'));
     
     // Find the clicked nav link and make it active
-    const targetLink = document.querySelector(`[onclick="showSection('${sectionName}')"]`);
+    const targetLink = document.querySelector(`[data-section="${sectionName}"]`);
     if (targetLink) {
         targetLink.classList.add('active');
     }
 }
+
+// Add event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Navigation event listeners
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const section = this.getAttribute('data-section');
+            showSection(section);
+        });
+    });
+    
+    // CTA button event listener
+    const ctaButton = document.querySelector('.cta-button');
+    if (ctaButton) {
+        ctaButton.addEventListener('click', function() {
+            showSection('blog');
+        });
+    }
+    
+    // Load blog posts and latest post
+    loadBlogPosts();
+    loadLatestPost();
+});
+
+// Rest of your existing functions stay the same...
+// (loadBlogPost, loadBlogPosts, loadLatestPost functions)
 
 // Load and display a single blog post
 async function loadBlogPost(filename) {
