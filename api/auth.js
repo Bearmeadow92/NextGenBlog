@@ -17,8 +17,8 @@ router.get('/github', (req, res) => {
         return res.status(500).send('GitHub Client ID not configured');
     }
     
-    const redirectUri = process.env.NODE_ENV === 'production' 
-        ? 'https://nextgentechnologist.com/api/auth/github/callback'
+    const redirectUri = process.env.NEXTAUTH_URL 
+        ? `${process.env.NEXTAUTH_URL}/api/auth/github/callback`
         : 'http://localhost:3000/api/auth/github/callback';
     
     const githubAuthURL = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=repo&redirect_uri=${redirectUri}`;
