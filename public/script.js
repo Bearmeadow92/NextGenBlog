@@ -16,7 +16,7 @@ function showSection(sectionName) {
 
 // Load and display a single blog post
 async function loadBlogPost(filename) {
-    console.log('Loading post:', filename); // Debug log
+    console.log('Loading post:', filename);
     
     try {
         const response = await fetch(`https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`);
@@ -25,6 +25,11 @@ async function loadBlogPost(filename) {
         const markdownContent = atob(data.content);
         
         const { frontmatter, content } = parseFrontmatter(markdownContent);
+        
+        // Check if marked is loaded
+        if (typeof marked === 'undefined') {
+            throw new Error('Markdown parser not loaded');
+        }
         
         const htmlContent = marked.parse(content);
         
@@ -171,7 +176,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Load blog posts and latest post
-    loadBlogPosts();
-    loadLatestPost();
+    // Back button event listener
+    const backBtn = document.querySelector('.back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            showSection('blog');
+        });
+    }
+    
+    // Wait for marked.js to load before loading posts
+    if (typeof marked !== 'undefined') {
+        loadBlogPosts();
+        loadLatestPost();
+    } else {
+        // Retry after a short delay
+        setTimeout(() => {
+            loadBlogPosts();
+            loadLatestPost();
+        }, 100);
+    }
 });

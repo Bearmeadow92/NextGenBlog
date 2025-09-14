@@ -15,7 +15,7 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Allow marked.js CDN
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", "https://api.github.com", "https://github.com"],
             formAction: ["'self'", "https://github.com"],
@@ -26,7 +26,7 @@ app.use(helmet({
 // CORS configuration
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? 'https://nextgentechnologist.com' 
+        ? ['https://www.nextgentechnologist.com', 'https://nextgentechnologist.com']
         : 'http://localhost:3000',
     credentials: true
 }));
