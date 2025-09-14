@@ -345,34 +345,23 @@ switchView(view) {
         }
     }
 
+    // FIXED: Updated editPost to use database API instead of GitHub API
     async editPost(filename) {
         try {
-            const response = await fetch(`https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`);
-            const data = await response.json();
+            const response = await fetch(`/api/posts/${filename}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
             
-            const markdownContent = atob(data.content);
-            
-            const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-            const match = markdownContent.match(frontmatterRegex);
-            
-            if (match) {
-                const frontmatterText = match[1];
-                const content = match[2];
+            if (response.ok) {
+                const post = await response.json();
                 
-                const frontmatter = {};
-                frontmatterText.split('\n').forEach(line => {
-                    const [key, ...valueParts] = line.split(':');
-                    if (key && valueParts.length > 0) {
-                        const value = valueParts.join(':').trim().replace(/"/g, '');
-                        frontmatter[key.trim()] = value;
-                    }
-                });
-                
-                // Fill the form
-                document.getElementById('post-title').value = frontmatter.title || '';
-                document.getElementById('post-date').value = frontmatter.date || '';
-                document.getElementById('post-description').value = frontmatter.description || '';
-                document.getElementById('post-content').value = content.trim();
+                // Fill the form with database data
+                document.getElementById('post-title').value = post.title || '';
+                document.getElementById('post-date').value = post.date || '';
+                document.getElementById('post-description').value = post.description || '';
+                document.getElementById('post-content').value = post.content || '';
                 
                 // Set edit mode - keep the same filename
                 this.editingPost = filename;
@@ -382,6 +371,11 @@ switchView(view) {
                 document.querySelector('.submit-btn').textContent = 'Update Post';
                 
                 this.switchView('new-post');
+            } else if (response.status === 401) {
+                alert('Authentication failed. Please log in again.');
+                this.logout();
+            } else {
+                alert('Error loading post for editing.');
             }
         } catch (error) {
             console.error('Error loading post for editing:', error);
