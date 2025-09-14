@@ -40,12 +40,31 @@ nav {
 }
 
 .logo {
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 1.5rem;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.logo-image {
+    height: 40px; /* Adjust based on your nav height */
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.logo-image:hover {
+    transform: scale(1.05);
+}
+
+/* Mobile logo adjustments */
+@media (max-width: 768px) {
+    .logo-image {
+        height: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-image {
+        height: 28px;
+    }
 }
 
 .nav-links {
