@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
         }
 
         // Configure email transporter
-        const transporter = nodemailer.createTransporter({
+        const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: process.env.CONTACT_EMAIL,
