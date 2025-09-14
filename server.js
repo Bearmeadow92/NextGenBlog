@@ -94,8 +94,8 @@ app.use('/admin.js', express.static(path.join(__dirname, 'admin', 'admin.js')));
 
 // API routes
 app.use('/api/auth', require('./api/auth'));
+app.use('/api/contact', require('./api/contact')); // CONTACT FORM ROUTE
 
-app.use('/api/contact', require('./api/contact'));
 // Conditionally use database or GitHub API for posts
 if (process.env.DATABASE_URL) {
     // Use database-powered posts API

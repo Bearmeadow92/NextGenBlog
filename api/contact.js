@@ -2,10 +2,23 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 
+// Test route
+router.get('/test', (req, res) => {
+    res.json({ 
+        message: 'Contact API is reachable',
+        envVars: {
+            emailSet: !!process.env.CONTACT_EMAIL,
+            passwordSet: !!process.env.CONTACT_EMAIL_PASSWORD
+        }
+    });
+});
+
 // Contact form submission
 router.post('/', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
+
+        console.log('Contact form submission received:', { name, email, subject });
 
         // Basic validation
         if (!name || !email || !subject || !message) {
@@ -24,12 +37,12 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Configure email transporter (using Gmail as example)
+        // Configure email transporter
         const transporter = nodemailer.createTransporter({
             service: 'gmail',
             auth: {
-                user: process.env.CONTACT_EMAIL, // Your Gmail address
-                pass: process.env.CONTACT_EMAIL_PASSWORD // App-specific password
+                user: process.env.CONTACT_EMAIL,
+                pass: process.env.CONTACT_EMAIL_PASSWORD
             }
         });
 
@@ -54,7 +67,9 @@ router.post('/', async (req, res) => {
         };
 
         // Send email
+        console.log('Attempting to send email...');
         await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully');
 
         res.json({ 
             success: true, 

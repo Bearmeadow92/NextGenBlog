@@ -1,199 +1,250 @@
-// Navigation functionality
-function showSection(sectionName) {
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.classList.remove('active'));
-    
-    document.getElementById(sectionName).classList.add('active');
-    
-    const navLinks = document.querySelectorAll('.nav-links a');
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    const targetLink = document.querySelector(`[data-section="${sectionName}"]`);
-    if (targetLink) {
-        targetLink.classList.add('active');
-    }
-}
+// Global state
+let currentSection = 'home';
+let blogPosts = [];
 
-// Load and display a single blog post
-async function loadBlogPost(filename) {
-    console.log('Loading post:', filename);
-    
-    try {
-        // Fetch from your database API instead of GitHub
-        const response = await fetch(`/api/posts/${filename}`);
-        const post = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(post.error || 'Failed to load post');
-        }
-        
-        // Check if marked is loaded
-        if (typeof marked === 'undefined') {
-            throw new Error('Markdown parser not loaded');
-        }
-        
-        const htmlContent = marked.parse(post.content);
-        
-        document.getElementById('blog-post-content').innerHTML = `
-            <h1>${post.title}</h1>
-            <p class="post-meta">Published on ${formatDate(post.date)}</p>
-            <div class="post-content">${htmlContent}</div>
-        `;
-        
-        showSection('blog-post');
-        
-    } catch (error) {
-        console.error('Error loading blog post:', error);
-        document.getElementById('blog-post-content').innerHTML = '<p>Error loading post.</p>';
-    }
-}
-
-// Load blog posts from API
-async function loadBlogPosts() {
-    try {
-        const response = await fetch('/api/posts/public');
-        const posts = await response.json();
-        
-        const postsContainer = document.getElementById('posts-container');
-        
-        if (posts.length === 0) {
-            postsContainer.innerHTML = '<p>No posts yet. Check back soon!</p>';
-            return;
-        }
-        
-        // Use proper event handlers instead of inline onclick
-        postsContainer.innerHTML = posts.map(post => `
-            <article class="blog-post">
-                <h3>${post.title}</h3>
-                <p class="post-date">${formatDate(post.date)}</p>
-                <p class="post-description">${post.description}</p>
-                <button class="read-more" data-filename="${post.filename}">Read more →</button>
-            </article>
-        `).join('');
-        
-        // Add event listeners to all read-more buttons
-        postsContainer.querySelectorAll('.read-more').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const filename = e.target.dataset.filename;
-                loadBlogPost(filename);
-            });
-        });
-        
-    } catch (error) {
-        console.error('Error loading posts:', error);
-        document.getElementById('posts-container').innerHTML = '<p>Error loading posts.</p>';
-    }
-}
-
-// Load latest blog post for home page preview
-async function loadLatestPost() {
-    try {
-        const response = await fetch('/api/posts/public');
-        const posts = await response.json();
-        
-        const latestPostContainer = document.getElementById('latest-post-container');
-        
-        if (posts.length === 0) {
-            latestPostContainer.innerHTML = '<p>No posts yet.</p>';
-            return;
-        }
-        
-        const latestPost = posts[0];
-        
-        latestPostContainer.innerHTML = `
-            <article class="latest-post-card">
-                <h3>${latestPost.title}</h3>
-                <p class="post-date">${formatDate(latestPost.date)}</p>
-                <p class="post-description">${latestPost.description}</p>
-                <button class="read-more" data-filename="${latestPost.filename}">Read Full Post →</button>
-            </article>
-        `;
-        
-        // Add event listener to latest post button
-        const latestButton = latestPostContainer.querySelector('.read-more');
-        if (latestButton) {
-            latestButton.addEventListener('click', (e) => {
-                const filename = e.target.dataset.filename;
-                loadBlogPost(filename);
-            });
-        }
-        
-    } catch (error) {
-        console.error('Error loading latest post:', error);
-        document.getElementById('latest-post-container').innerHTML = '<p>Error loading latest post.</p>';
-    }
-}
-
-// Parse frontmatter from markdown
-function parseFrontmatter(markdown) {
-    const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-    const match = markdown.match(frontmatterRegex);
-    
-    if (!match) {
-        return { frontmatter: {}, content: markdown };
-    }
-    
-    const frontmatterText = match[1];
-    const content = match[2];
-    
-    const frontmatter = {};
-    frontmatterText.split('\n').forEach(line => {
-        const [key, ...valueParts] = line.split(':');
-        if (key && valueParts.length > 0) {
-            const value = valueParts.join(':').trim().replace(/"/g, '');
-            frontmatter[key.trim()] = value;
-        }
-    });
-    
-    return { frontmatter, content };
-}
-
-// Format date for display
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-// Add event listeners when page loads
+// Navigation and section management
 document.addEventListener('DOMContentLoaded', function() {
-    // Navigation event listeners
-    document.querySelectorAll('.nav-links a').forEach(link => {
+    console.log('DOM Content Loaded');
+    
+    // Initialize navigation
+    setupNavigation();
+    
+    // Load initial content
+    loadLatestPost();
+    
+    // Setup contact form
+    setupContactForm();
+    
+    // Set initial state
+    showSection('home');
+});
+
+function setupNavigation() {
+    // Navigation click handlers
+    document.querySelectorAll('[data-section]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const section = this.getAttribute('data-section');
             showSection(section);
         });
     });
-    
-    // CTA button event listener
+
+    // CTA button
     const ctaButton = document.querySelector('.cta-button');
     if (ctaButton) {
         ctaButton.addEventListener('click', function() {
             showSection('blog');
         });
     }
-    
-    // Back button event listener
+
+    // Back button for blog post view
     const backBtn = document.querySelector('.back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', function() {
             showSection('blog');
         });
     }
+}
+
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
     
-    // Wait for marked.js to load before loading posts
-    if (typeof marked !== 'undefined') {
-        loadBlogPosts();
-        loadLatestPost();
-    } else {
-        // Retry after a short delay
-        setTimeout(() => {
-            loadBlogPosts();
-            loadLatestPost();
-        }, 100);
+    // Show target section
+    const targetSection = document.getElementById(sectionName);
+    if (targetSection) {
+        targetSection.classList.add('active');
     }
-});
+    
+    // Update navigation
+    document.querySelectorAll('[data-section]').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    const activeLink = document.querySelector(`[data-section="${sectionName}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+    
+    currentSection = sectionName;
+    
+    // Load content for specific sections
+    if (sectionName === 'blog') {
+        loadBlogPosts();
+    }
+}
+
+// Blog functionality
+async function loadLatestPost() {
+    try {
+        const response = await fetch('/api/posts/public');
+        if (response.ok) {
+            const posts = await response.json();
+            if (posts.length > 0) {
+                displayLatestPost(posts[0]);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading latest post:', error);
+        document.getElementById('latest-post-container').innerHTML = '<p>Unable to load latest post.</p>';
+    }
+}
+
+function displayLatestPost(post) {
+    const container = document.getElementById('latest-post-container');
+    container.innerHTML = `
+        <div class="latest-post-card" onclick="loadBlogPost('${post.filename}')">
+            <h3>${post.title}</h3>
+            <div class="post-date">${post.date}</div>
+            <div class="post-description">${post.description}</div>
+            <button class="read-more">Read More</button>
+        </div>
+    `;
+}
+
+async function loadBlogPosts() {
+    try {
+        const response = await fetch('/api/posts/public');
+        if (response.ok) {
+            const posts = await response.json();
+            blogPosts = posts;
+            displayBlogPosts(posts);
+        } else {
+            document.getElementById('posts-container').innerHTML = '<p>Error loading posts.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        document.getElementById('posts-container').innerHTML = '<p>Unable to load posts. Please check your connection.</p>';
+    }
+}
+
+function displayBlogPosts(posts) {
+    const container = document.getElementById('posts-container');
+    
+    if (posts.length === 0) {
+        container.innerHTML = '<p>No posts available yet.</p>';
+        return;
+    }
+
+    container.innerHTML = posts.map(post => `
+        <article class="blog-post" onclick="loadBlogPost('${post.filename}')">
+            <h3>${post.title}</h3>
+            <div class="post-date">${post.date}</div>
+            <div class="post-description">${post.description}</div>
+            <button class="read-more">Read More</button>
+        </article>
+    `).join('');
+}
+
+async function loadBlogPost(filename) {
+    try {
+        const response = await fetch(`/api/posts/${filename}`);
+        if (response.ok) {
+            const post = await response.json();
+            displayBlogPost(post);
+            showSection('blog-post');
+        } else {
+            alert('Error loading post');
+        }
+    } catch (error) {
+        console.error('Error loading blog post:', error);
+        alert('Error loading post. Please check your connection.');
+    }
+}
+
+function displayBlogPost(post) {
+    const container = document.getElementById('blog-post-content');
+    
+    // Convert markdown to HTML
+    const htmlContent = marked.parse(post.content);
+    
+    container.innerHTML = `
+        <h1>${post.title}</h1>
+        <div class="post-date">${post.date}</div>
+        <div class="post-description">${post.description}</div>
+        <div class="post-content">${htmlContent}</div>
+    `;
+}
+
+// Contact form functionality
+function setupContactForm() {
+    console.log('Setting up contact form...');
+    
+    const contactForm = document.getElementById('contact-form');
+    const submitBtn = document.getElementById('contact-submit');
+    const feedback = document.getElementById('contact-feedback');
+
+    console.log('Contact form elements:', { contactForm, submitBtn, feedback });
+
+    if (contactForm) {
+        console.log('Contact form found, adding event listener...');
+        
+        contactForm.addEventListener('submit', async function(e) {
+            console.log('Form submitted!');
+            e.preventDefault();
+
+            // Get form data
+            const formData = new FormData(contactForm);
+            const data = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                subject: formData.get('subject'),
+                message: formData.get('message')
+            };
+
+            console.log('Form data:', data);
+
+            // Disable submit button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            feedback.style.display = 'none';
+
+            try {
+                console.log('Sending POST request to /api/contact...');
+                
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Response received:', response.status);
+
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    // Success
+                    feedback.className = 'contact-feedback success';
+                    feedback.textContent = result.message;
+                    feedback.style.display = 'block';
+                    
+                    // Reset form
+                    contactForm.reset();
+                } else {
+                    // Error from server
+                    feedback.className = 'contact-feedback error';
+                    feedback.textContent = result.error || 'Failed to send message';
+                    feedback.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Network error:', error);
+                // Network error
+                feedback.className = 'contact-feedback error';
+                feedback.textContent = 'Network error. Please check your connection and try again.';
+                feedback.style.display = 'block';
+            }
+
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Message';
+        });
+    } else {
+        console.log('Contact form not found!');
+    }
+}
