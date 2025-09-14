@@ -21,7 +21,7 @@ router.get('/github', (req, res) => {
         ? `${process.env.NEXTAUTH_URL}/api/auth/github/callback`
         : 'http://localhost:3000/api/auth/github/callback';
     
-    const githubAuthURL = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=repo&redirect_uri=${redirectUri}`;
+    const githubAuthURL = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(process.env.GITHUB_CLIENT_ID)}&scope=repo&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
     console.log('Redirecting to:', githubAuthURL);
     res.redirect(githubAuthURL);
