@@ -1,17 +1,13 @@
 // Navigation functionality
 function showSection(sectionName) {
-    // Hide all sections
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => section.classList.remove('active'));
     
-    // Show target section
     document.getElementById(sectionName).classList.add('active');
     
-    // Update navigation active state
     const navLinks = document.querySelectorAll('.nav-links a');
     navLinks.forEach(link => link.classList.remove('active'));
     
-    // Find the clicked nav link and make it active
     const targetLink = document.querySelector(`[data-section="${sectionName}"]`);
     if (targetLink) {
         targetLink.classList.add('active');
@@ -20,28 +16,24 @@ function showSection(sectionName) {
 
 // Load and display a single blog post
 async function loadBlogPost(filename) {
+    console.log('Loading post:', filename); // Debug log
+    
     try {
-        // Fetch the markdown file from GitHub API
         const response = await fetch(`https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`);
         const data = await response.json();
         
-        // Decode the base64 content
         const markdownContent = atob(data.content);
         
-        // Parse frontmatter
         const { frontmatter, content } = parseFrontmatter(markdownContent);
         
-        // Parse markdown to HTML
         const htmlContent = marked.parse(content);
         
-        // Display in blog post section
         document.getElementById('blog-post-content').innerHTML = `
             <h1>${frontmatter.title}</h1>
             <p class="post-meta">Published on ${formatDate(frontmatter.date)}</p>
             <div class="post-content">${htmlContent}</div>
         `;
         
-        // Show the blog post section
         showSection('blog-post');
         
     } catch (error) {
@@ -63,14 +55,23 @@ async function loadBlogPosts() {
             return;
         }
         
+        // Use proper event handlers instead of inline onclick
         postsContainer.innerHTML = posts.map(post => `
             <article class="blog-post">
                 <h3>${post.title}</h3>
                 <p class="post-date">${formatDate(post.date)}</p>
                 <p class="post-description">${post.description}</p>
-                <button class="read-more" onclick="loadBlogPost('${post.filename}')">Read more →</button>
+                <button class="read-more" data-filename="${post.filename}">Read more →</button>
             </article>
         `).join('');
+        
+        // Add event listeners to all read-more buttons
+        postsContainer.querySelectorAll('.read-more').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const filename = e.target.dataset.filename;
+                loadBlogPost(filename);
+            });
+        });
         
     } catch (error) {
         console.error('Error loading posts:', error);
@@ -91,16 +92,25 @@ async function loadLatestPost() {
             return;
         }
         
-        const latestPost = posts[0]; // First post is newest
+        const latestPost = posts[0];
         
         latestPostContainer.innerHTML = `
             <article class="latest-post-card">
                 <h3>${latestPost.title}</h3>
                 <p class="post-date">${formatDate(latestPost.date)}</p>
                 <p class="post-description">${latestPost.description}</p>
-                <button class="read-more" onclick="loadBlogPost('${latestPost.filename}')">Read Full Post →</button>
+                <button class="read-more" data-filename="${latestPost.filename}">Read Full Post →</button>
             </article>
         `;
+        
+        // Add event listener to latest post button
+        const latestButton = latestPostContainer.querySelector('.read-more');
+        if (latestButton) {
+            latestButton.addEventListener('click', (e) => {
+                const filename = e.target.dataset.filename;
+                loadBlogPost(filename);
+            });
+        }
         
     } catch (error) {
         console.error('Error loading latest post:', error);
@@ -120,7 +130,6 @@ function parseFrontmatter(markdown) {
     const frontmatterText = match[1];
     const content = match[2];
     
-    // Simple frontmatter parser
     const frontmatter = {};
     frontmatterText.split('\n').forEach(line => {
         const [key, ...valueParts] = line.split(':');

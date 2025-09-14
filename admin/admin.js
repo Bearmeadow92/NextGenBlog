@@ -2,6 +2,7 @@ class AdminApp {
     constructor() {
         this.token = null;
         this.currentView = 'posts';
+        this.editingPost = null; // Track if we're editing
         this.init();
     }
 
@@ -73,7 +74,7 @@ class AdminApp {
             });
         }
 
-        // Event delegation for dynamic buttons (Edit/Delete)
+        // Event delegation for dynamic buttons
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('edit-btn')) {
                 const filename = e.target.dataset.filename;
@@ -139,7 +140,6 @@ class AdminApp {
                 const posts = await response.json();
                 this.renderPostsList(posts);
             } else if (response.status === 401) {
-                // Token expired or invalid
                 console.error('Authentication failed, redirecting to login');
                 this.logout();
             } else {
@@ -160,7 +160,6 @@ class AdminApp {
             return;
         }
 
-        // Use data attributes instead of inline onclick handlers
         container.innerHTML = posts.map(post => `
             <div class="post-item">
                 <div class="post-info">
@@ -178,6 +177,11 @@ class AdminApp {
     resetPostForm() {
         document.getElementById('post-form').reset();
         document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
+        this.editingPost = null; // Clear edit mode
+        
+        // Update form title
+        document.querySelector('#new-post-view h2').textContent = 'Create New Post';
+        document.querySelector('.submit-btn').textContent = 'Publish Post';
     }
 
     previewPost() {
@@ -191,7 +195,6 @@ class AdminApp {
             return;
         }
 
-        // Create preview window
         const previewWindow = window.open('', 'preview', 'width=800,height=600,scrollbars=yes');
         
         const previewHTML = `
@@ -242,28 +245,56 @@ class AdminApp {
         };
 
         try {
-            const response = await fetch('/api/posts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: JSON.stringify(postData)
-            });
+            let response;
+            
+            if (this.editingPost) {
+                // Update existing post - delete old one and create new one
+                // First delete the old post
+                const deleteResponse = await fetch(`/api/posts/${this.editingPost}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                });
+                
+                if (!deleteResponse.ok) {
+                    throw new Error('Failed to delete old post');
+                }
+                
+                // Then create the new one
+                response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.token}`
+                    },
+                    body: JSON.stringify(postData)
+                });
+            } else {
+                // Create new post
+                response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.token}`
+                    },
+                    body: JSON.stringify(postData)
+                });
+            }
 
             if (response.ok) {
-                alert('Post published successfully!');
+                alert(this.editingPost ? 'Post updated successfully!' : 'Post published successfully!');
                 this.switchView('posts');
             } else if (response.status === 401) {
                 alert('Authentication failed. Please log in again.');
                 this.logout();
             } else {
                 const errorData = await response.json();
-                alert(`Failed to publish post: ${errorData.error || 'Unknown error'}`);
+                alert(`Failed to ${this.editingPost ? 'update' : 'publish'} post: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
-            console.error('Error publishing post:', error);
-            alert('Error publishing post. Please check your connection.');
+            console.error('Error submitting post:', error);
+            alert(`Error ${this.editingPost ? 'updating' : 'publishing'} post. Please check your connection.`);
         }
     }
 
@@ -298,14 +329,11 @@ class AdminApp {
 
     async editPost(filename) {
         try {
-            // Fetch the post content from GitHub
             const response = await fetch(`https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`);
             const data = await response.json();
             
-            // Decode the content
             const markdownContent = atob(data.content);
             
-            // Parse frontmatter
             const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
             const match = markdownContent.match(frontmatterRegex);
             
@@ -313,7 +341,6 @@ class AdminApp {
                 const frontmatterText = match[1];
                 const content = match[2];
                 
-                // Parse frontmatter fields
                 const frontmatter = {};
                 frontmatterText.split('\n').forEach(line => {
                     const [key, ...valueParts] = line.split(':');
@@ -323,18 +350,20 @@ class AdminApp {
                     }
                 });
                 
-                // Fill the form with existing data
+                // Fill the form
                 document.getElementById('post-title').value = frontmatter.title || '';
                 document.getElementById('post-date').value = frontmatter.date || '';
                 document.getElementById('post-description').value = frontmatter.description || '';
                 document.getElementById('post-content').value = content.trim();
                 
-                // Switch to new post view for editing
-                this.switchView('new-post');
+                // Set edit mode
+                this.editingPost = filename;
                 
-                // Note: This is basic edit - doesn't handle updating existing posts
-                // You'd need to modify the handlePostSubmit to detect edit mode
-                alert('Post loaded for editing. Note: This will create a new post when submitted.');
+                // Update UI to show edit mode
+                document.querySelector('#new-post-view h2').textContent = 'Edit Post';
+                document.querySelector('.submit-btn').textContent = 'Update Post';
+                
+                this.switchView('new-post');
             }
         } catch (error) {
             console.error('Error loading post for editing:', error);
@@ -343,5 +372,4 @@ class AdminApp {
     }
 }
 
-// Initialize admin app when page loads
 const adminApp = new AdminApp();
