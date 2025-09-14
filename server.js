@@ -23,6 +23,9 @@ async function initializeDatabaseSafely() {
     }
 }
 
+// Trust proxy for Railway (FIXES the rate limiting warning)
+app.set('trust proxy', 1);
+
 // Security middleware with proper CSP
 app.use(helmet({
     contentSecurityPolicy: {
@@ -60,6 +63,30 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// DEBUG ROUTE - Remove this after testing
+app.get('/debug/files', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    
+    try {
+        const publicDir = path.join(__dirname, 'public');
+        const imagesDir = path.join(__dirname, 'public', 'images');
+        
+        const publicFiles = fs.existsSync(publicDir) ? fs.readdirSync(publicDir) : ['public dir not found'];
+        const imageFiles = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir) : ['images dir not found'];
+        
+        res.json({
+            publicFiles,
+            imageFiles,
+            publicExists: fs.existsSync(publicDir),
+            imagesExists: fs.existsSync(imagesDir),
+            __dirname
+        });
+    } catch (error) {
+        res.json({ error: error.message });
+    }
+});
 
 // Serve admin assets (BEFORE admin routes)
 app.use('/admin.css', express.static(path.join(__dirname, 'admin', 'admin.css')));
