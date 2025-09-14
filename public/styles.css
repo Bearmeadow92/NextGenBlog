@@ -57,13 +57,13 @@ nav {
 /* Mobile logo adjustments */
 @media (max-width: 768px) {
     .logo-image {
-        height: 32px;
+        height: 62px;
     }
 }
 
 @media (max-width: 480px) {
     .logo-image {
-        height: 28px;
+        height: 48px;
     }
 }
 
