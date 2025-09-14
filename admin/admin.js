@@ -105,28 +105,29 @@ class AdminApp {
         this.showLogin();
     }
 
-    switchView(view) {
-        // Update navigation
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-view="${view}"]`).classList.add('active');
+switchView(view) {
+    // Update navigation
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
-        // Show/hide views
-        document.querySelectorAll('.admin-view').forEach(viewEl => {
-            viewEl.style.display = 'none';
-        });
-        document.getElementById(`${view}-view`).style.display = 'block';
+    // Show/hide views
+    document.querySelectorAll('.admin-view').forEach(viewEl => {
+        viewEl.style.display = 'none';
+    });
+    document.getElementById(`${view}-view`).style.display = 'block';
 
-        this.currentView = view;
+    this.currentView = view;
 
-        // Load data for specific views
-        if (view === 'posts') {
-            this.loadPosts();
-        } else if (view === 'new-post') {
-            this.resetPostForm();
-        }
+    // Load data for specific views
+    if (view === 'posts') {
+        this.loadPosts();
+    } else if (view === 'new-post' && !this.editingPost) {
+        // Only reset form if we're NOT editing
+        this.resetPostForm();
     }
+}
 
     async loadPosts() {
         try {
