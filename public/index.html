@@ -58,8 +58,55 @@
         </section>
 
         <section id="contact" class="section">
-            <h2>Contact</h2>
-            <p>Contact form will go here</p>
+            <div class="contact-container">
+                <h2>Get In Touch</h2>
+                <p class="contact-intro">Have a question about cybersecurity, want to collaborate on a project, or just want to connect? I'd love to hear from you.</p>
+                
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <h3>Contact Information</h3>
+                        <div class="contact-item">
+                            <strong>Email:</strong> hello@nextgentechnologist.com
+                        </div>
+                        <div class="contact-item">
+                            <strong>Response Time:</strong> Usually within 24 hours
+                        </div>
+                        <div class="contact-item">
+                            <strong>Best For:</strong> Cybersecurity discussions, collaboration opportunities, career advice
+                        </div>
+                    </div>
+                    
+                    <div class="contact-form-wrapper">
+                        <form id="contact-form" class="contact-form">
+                            <div class="form-group">
+                                <label for="contact-name">Name *</label>
+                                <input type="text" id="contact-name" name="name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="contact-email">Email *</label>
+                                <input type="email" id="contact-email" name="email" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="contact-subject">Subject *</label>
+                                <input type="text" id="contact-subject" name="subject" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="contact-message">Message *</label>
+                                <textarea id="contact-message" name="message" rows="6" required></textarea>
+                            </div>
+                            
+                            <button type="submit" class="submit-btn" id="contact-submit">
+                                Send Message
+                            </button>
+                            
+                            <div id="contact-feedback" class="contact-feedback"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section id="blog-post" class="section">
