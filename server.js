@@ -7,7 +7,10 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const { initDatabase } = require('./models/Post');
 
+// Initialize database on startup
+initDatabase();
 // Security middleware with proper CSP
 app.use(helmet({
     contentSecurityPolicy: {

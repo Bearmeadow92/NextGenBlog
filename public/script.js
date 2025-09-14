@@ -19,23 +19,24 @@ async function loadBlogPost(filename) {
     console.log('Loading post:', filename);
     
     try {
-        const response = await fetch(`https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`);
-        const data = await response.json();
+        // Fetch from your database API instead of GitHub
+        const response = await fetch(`/api/posts/${filename}`);
+        const post = await response.json();
         
-        const markdownContent = atob(data.content);
-        
-        const { frontmatter, content } = parseFrontmatter(markdownContent);
+        if (!response.ok) {
+            throw new Error(post.error || 'Failed to load post');
+        }
         
         // Check if marked is loaded
         if (typeof marked === 'undefined') {
             throw new Error('Markdown parser not loaded');
         }
         
-        const htmlContent = marked.parse(content);
+        const htmlContent = marked.parse(post.content);
         
         document.getElementById('blog-post-content').innerHTML = `
-            <h1>${frontmatter.title}</h1>
-            <p class="post-meta">Published on ${formatDate(frontmatter.date)}</p>
+            <h1>${post.title}</h1>
+            <p class="post-meta">Published on ${formatDate(post.date)}</p>
             <div class="post-content">${htmlContent}</div>
         `;
         
