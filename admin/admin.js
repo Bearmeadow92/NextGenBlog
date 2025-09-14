@@ -108,9 +108,19 @@ class AdminApp {
 switchView(view) {
     // Update navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
+        btn.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('logout-btn')) {
+                const view = e.target.dataset.view;
+                
+                // Only reset when explicitly clicking "New Post"
+                if (view === 'new-post') {
+                    this.resetPostForm();
+                }
+                
+                this.switchView(view);
+            }
+        });
     });
-    document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
     // Show/hide views
     document.querySelectorAll('.admin-view').forEach(viewEl => {
@@ -123,10 +133,8 @@ switchView(view) {
     // Load data for specific views
     if (view === 'posts') {
         this.loadPosts();
-    } else if (view === 'new-post') {
-        // ALWAYS reset form when explicitly navigating to "New Post"
-        this.resetPostForm();
     }
+    // Don't auto-reset here - let the calling code decide
 }
 
     async loadPosts() {
