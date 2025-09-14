@@ -54,6 +54,112 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 });
 
+// Update existing post (NEW - proper edit functionality)
+router.put('/:filename', authenticateToken, async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const { title, date, description, body } = req.body;
+
+        // Get current file to get its SHA
+        const fileResponse = await axios.get(
+            `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`,
+            {
+                headers: {
+                    'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }
+        );
+
+        const currentSha = fileResponse.data.sha;
+
+        // Create updated markdown content
+        const markdownContent = `---
+title: "${title}"
+date: ${date}
+description: "${description}"
+---
+
+${body}
+`;
+
+        // Update the file in GitHub
+        await axios.put(
+            `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`,
+            {
+                message: `Update blog post: ${title}`,
+                content: Buffer.from(markdownContent).toString('base64'),
+                sha: currentSha,
+                branch: 'main'
+            },
+            {
+                headers: {
+                    'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }
+        );
+
+        // Update posts.json index
+        try {
+            const postsResponse = await axios.get(
+                `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+                {
+                    headers: {
+                        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+            
+            const content = Buffer.from(postsResponse.data.content, 'base64').toString('utf8');
+            let currentPosts = JSON.parse(content);
+            
+            // Update the post in the index
+            const postIndex = currentPosts.findIndex(post => post.filename === filename);
+            if (postIndex !== -1) {
+                currentPosts[postIndex] = {
+                    title,
+                    date,
+                    description,
+                    filename
+                };
+                
+                // Update posts.json
+                await axios.put(
+                    `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+                    {
+                        message: `Update posts index for: ${title}`,
+                        content: Buffer.from(JSON.stringify(currentPosts, null, 2)).toString('base64'),
+                        sha: postsResponse.data.sha,
+                        branch: 'main'
+                    },
+                    {
+                        headers: {
+                            'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+            }
+
+            console.log('Successfully updated posts.json');
+        } catch (error) {
+            console.error('Error updating posts.json:', error);
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Post updated successfully',
+            filename: filename
+        });
+
+    } catch (error) {
+        console.error('Error updating post:', error);
+        res.status(500).json({ error: 'Failed to update post' });
+    }
+});
+
 // Create new post
 router.post('/', authenticateToken, async (req, res) => {
     try {

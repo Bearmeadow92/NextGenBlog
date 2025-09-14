@@ -237,6 +237,19 @@ class AdminApp {
             return;
         }
 
+        try {
+            if (this.editingPost) {
+                await this.updateExistingPost(title, date, description, content);
+            } else {
+                await this.createNewPost(title, date, description, content);
+            }
+        } catch (error) {
+            console.error('Error submitting post:', error);
+            alert(`Error ${this.editingPost ? 'updating' : 'publishing'} post. Please check your connection.`);
+        }
+    }
+
+    async createNewPost(title, date, description, content) {
         const postData = {
             title,
             date,
@@ -244,57 +257,53 @@ class AdminApp {
             body: content
         };
 
-        try {
-            let response;
-            
-            if (this.editingPost) {
-                // Update existing post - delete old one and create new one
-                // First delete the old post
-                const deleteResponse = await fetch(`/api/posts/${this.editingPost}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`
-                    }
-                });
-                
-                if (!deleteResponse.ok) {
-                    throw new Error('Failed to delete old post');
-                }
-                
-                // Then create the new one
-                response = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.token}`
-                    },
-                    body: JSON.stringify(postData)
-                });
-            } else {
-                // Create new post
-                response = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.token}`
-                    },
-                    body: JSON.stringify(postData)
-                });
-            }
+        const response = await fetch('/api/posts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify(postData)
+        });
 
-            if (response.ok) {
-                alert(this.editingPost ? 'Post updated successfully!' : 'Post published successfully!');
-                this.switchView('posts');
-            } else if (response.status === 401) {
-                alert('Authentication failed. Please log in again.');
-                this.logout();
-            } else {
-                const errorData = await response.json();
-                alert(`Failed to ${this.editingPost ? 'update' : 'publish'} post: ${errorData.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Error submitting post:', error);
-            alert(`Error ${this.editingPost ? 'updating' : 'publishing'} post. Please check your connection.`);
+        if (response.ok) {
+            alert('Post published successfully!');
+            this.switchView('posts');
+        } else if (response.status === 401) {
+            alert('Authentication failed. Please log in again.');
+            this.logout();
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to publish post: ${errorData.error || 'Unknown error'}`);
+        }
+    }
+
+    async updateExistingPost(title, date, description, content) {
+        const postData = {
+            title,
+            date,
+            description,
+            body: content
+        };
+
+        const response = await fetch(`/api/posts/${this.editingPost}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify(postData)
+        });
+
+        if (response.ok) {
+            alert('Post updated successfully!');
+            this.switchView('posts');
+        } else if (response.status === 401) {
+            alert('Authentication failed. Please log in again.');
+            this.logout();
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to update post: ${errorData.error || 'Unknown error'}`);
         }
     }
 
@@ -356,7 +365,7 @@ class AdminApp {
                 document.getElementById('post-description').value = frontmatter.description || '';
                 document.getElementById('post-content').value = content.trim();
                 
-                // Set edit mode
+                // Set edit mode - keep the same filename
                 this.editingPost = filename;
                 
                 // Update UI to show edit mode
