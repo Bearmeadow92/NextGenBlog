@@ -7,10 +7,22 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const { initDatabase } = require('./models/Post');
 
-// Initialize database on startup
-initDatabase();
+// Initialize database with error handling
+async function initializeDatabaseSafely() {
+    try {
+        if (process.env.DATABASE_URL) {
+            const { initDatabase } = require('./models/Post');
+            await initDatabase();
+            console.log('Database connected successfully');
+        } else {
+            console.log('DATABASE_URL not found - running without database');
+        }
+    } catch (error) {
+        console.error('Database connection failed, continuing without database:', error.message);
+    }
+}
+
 // Security middleware with proper CSP
 app.use(helmet({
     contentSecurityPolicy: {
@@ -55,7 +67,15 @@ app.use('/admin.js', express.static(path.join(__dirname, 'admin', 'admin.js')));
 
 // API routes
 app.use('/api/auth', require('./api/auth'));
-app.use('/api/posts', require('./api/posts'));
+
+// Conditionally use database or GitHub API for posts
+if (process.env.DATABASE_URL) {
+    // Use database-powered posts API
+    app.use('/api/posts', require('./api/posts'));
+} else {
+    // Fall back to your original GitHub-based posts API
+    app.use('/api/posts', require('./api/posts'));
+}
 
 // Admin interface route
 app.get('/admin', (req, res) => {
@@ -67,6 +87,8 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
+// Start server and initialize database
+app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
+    await initializeDatabaseSafely();
 });
