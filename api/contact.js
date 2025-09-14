@@ -37,13 +37,21 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Configure email transporter
+        // Configure email transporter with alternative settings
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // true for 465, false for other ports
             auth: {
                 user: process.env.CONTACT_EMAIL,
                 pass: process.env.CONTACT_EMAIL_PASSWORD
-            }
+            },
+            tls: {
+                rejectUnauthorized: false
+            },
+            connectionTimeout: 60000, // 60 seconds
+            greetingTimeout: 30000,    // 30 seconds
+            socketTimeout: 60000       // 60 seconds
         });
 
         // Email content
@@ -67,7 +75,7 @@ router.post('/', async (req, res) => {
         };
 
         // Send email
-        console.log('Attempting to send email...');
+        console.log('Attempting to send email with alternative SMTP settings...');
         await transporter.sendMail(mailOptions);
         console.log('Email sent successfully');
 
