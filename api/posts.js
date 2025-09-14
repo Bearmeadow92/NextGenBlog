@@ -49,7 +49,7 @@ description: "${description}"
 ${body}
 `;
 
-        // Commit to GitHub
+        // Commit markdown file to GitHub
         const commitResponse = await axios.put(
             `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts/${filename}`,
             {
@@ -65,7 +65,69 @@ ${body}
             }
         );
 
-        // Trigger rebuild by updating a timestamp file or just return success
+        // Now update posts.json index
+        try {
+            // First, get current posts.json
+            let currentPosts = [];
+            let postsJsonSha = null;
+            
+            try {
+                const postsResponse = await axios.get(
+                    `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+                    {
+                        headers: {
+                            'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                const content = Buffer.from(postsResponse.data.content, 'base64').toString('utf8');
+                currentPosts = JSON.parse(content);
+                postsJsonSha = postsResponse.data.sha;
+            } catch (error) {
+                // posts.json doesn't exist yet, start with empty array
+                console.log('posts.json does not exist yet, creating new one');
+                currentPosts = [];
+            }
+
+            // Add new post to the beginning of the array
+            currentPosts.unshift({
+                title,
+                date,
+                description,
+                filename
+            });
+
+            // Prepare the update payload
+            const updatePayload = {
+                message: `Update posts index for: ${title}`,
+                content: Buffer.from(JSON.stringify(currentPosts, null, 2)).toString('base64'),
+                branch: 'main'
+            };
+
+            // Include SHA if file exists
+            if (postsJsonSha) {
+                updatePayload.sha = postsJsonSha;
+            }
+
+            // Update posts.json
+            await axios.put(
+                `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+                updatePayload,
+                {
+                    headers: {
+                        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+
+            console.log('Successfully updated posts.json');
+        } catch (error) {
+            console.error('Error updating posts.json:', error);
+            // Don't fail the whole request if posts.json update fails
+        }
+
         res.json({ 
             success: true, 
             message: 'Post created successfully',
@@ -111,6 +173,44 @@ router.delete('/:filename', authenticateToken, async (req, res) => {
                 }
             }
         );
+
+        // Also remove from posts.json
+        try {
+            const postsResponse = await axios.get(
+                `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+                {
+                    headers: {
+                        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+            
+            const content = Buffer.from(postsResponse.data.content, 'base64').toString('utf8');
+            let currentPosts = JSON.parse(content);
+            
+            // Remove the deleted post
+            currentPosts = currentPosts.filter(post => post.filename !== filename);
+            
+            // Update posts.json
+            await axios.put(
+                `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+                {
+                    message: `Remove deleted post from index: ${filename}`,
+                    content: Buffer.from(JSON.stringify(currentPosts, null, 2)).toString('base64'),
+                    sha: postsResponse.data.sha,
+                    branch: 'main'
+                },
+                {
+                    headers: {
+                        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+        } catch (error) {
+            console.error('Error updating posts.json after deletion:', error);
+        }
 
         res.json({ success: true, message: 'Post deleted successfully' });
 
