@@ -123,8 +123,8 @@ switchView(view) {
     // Load data for specific views
     if (view === 'posts') {
         this.loadPosts();
-    } else if (view === 'new-post' && !this.editingPost) {
-        // Only reset form if we're NOT editing
+    } else if (view === 'new-post') {
+        // ALWAYS reset form when explicitly navigating to "New Post"
         this.resetPostForm();
     }
 }
