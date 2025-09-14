@@ -3,7 +3,33 @@ const axios = require('axios');
 const { authenticateToken } = require('./middleware');
 const router = express.Router();
 
-// Get all posts
+// Public route to get posts (no authentication required)
+router.get('/public', async (req, res) => {
+    try {
+        // Read posts.json from your repository
+        const response = await axios.get(
+            `https://api.github.com/repos/Bearmeadow92/NextGenBlog/contents/posts.json`,
+            {
+                headers: {
+                    'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }
+        );
+
+        // Decode base64 content
+        const content = Buffer.from(response.data.content, 'base64').toString('utf8');
+        const posts = JSON.parse(content);
+
+        res.json(posts);
+    } catch (error) {
+        console.error('Error fetching public posts:', error);
+        // Return empty array if posts.json doesn't exist
+        res.json([]);
+    }
+});
+
+// Get all posts (authenticated - for admin)
 router.get('/', authenticateToken, async (req, res) => {
     try {
         // Read posts.json from your repository
