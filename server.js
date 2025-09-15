@@ -90,19 +90,6 @@ const Post = sequelize.define('Post', {
     timestamps: true
 });
 
-// ============================================
-// TEMPORARY FIX - REMOVE AFTER FIRST DEPLOY
-// ============================================
-// This will update your database schema to fix the isArchived column issue
-sequelize.sync({ alter: true }).then(() => {
-    console.log('✅ Database schema updated successfully!');
-    console.log('⚠️  IMPORTANT: Remove the sequelize.sync() code after this deploy!');
-}).catch(err => {
-    console.error('❌ Schema update failed:', err);
-});
-// ============================================
-// END OF TEMPORARY FIX
-// ============================================
 
 
 // Middleware
@@ -196,7 +183,6 @@ app.post('/api/contact', async (req, res) => {
 app.use(express.static('public'));
 app.use('/admin-assets', express.static('admin'));  // Changed path to avoid conflict
 
-// Admin routes
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
