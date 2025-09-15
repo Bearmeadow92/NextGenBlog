@@ -47,7 +47,7 @@ const Post = sequelize.define('Post', {
     }
 }, {
     tableName: 'posts',
-    timestamps: true, // adds createdAt and updatedAt
+    timestamps: true,
     indexes: [
         {
             fields: ['date'],
@@ -59,7 +59,39 @@ const Post = sequelize.define('Post', {
     ]
 });
 
-// Generate slug from title and date
+// Define Message model for contact form submissions
+const Message = sequelize.define('Message', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    subject: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    message: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    isRead: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    }
+}, {
+    tableName: 'messages',
+    timestamps: true // adds createdAt and updatedAt
+});
+
+// Generate slug from title and date for posts
 Post.beforeValidate((post) => {
     if (post.title && post.date) {
         const slug = post.title.toLowerCase()
@@ -84,4 +116,4 @@ async function initDatabase() {
     }
 }
 
-module.exports = { Post, sequelize, initDatabase };
+module.exports = { Post, Message, sequelize, initDatabase };

@@ -33,7 +33,7 @@ body {
     background: linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-surface) 100%);
 }
 
-.login-card {
+.login-content {
     background: var(--dark-surface);
     padding: 3rem;
     border-radius: 12px;
@@ -44,7 +44,7 @@ body {
     margin: 1rem;
 }
 
-.login-card h1 {
+.login-content h1 {
     background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -53,7 +53,7 @@ body {
     margin-bottom: 1rem;
 }
 
-.login-card p {
+.login-content p {
     color: var(--text-muted);
     margin-bottom: 2rem;
 }
@@ -83,7 +83,7 @@ body {
     flex-direction: column;
 }
 
-.admin-header {
+.admin-nav {
     background: var(--dark-surface);
     padding: 1rem 2rem;
     border-bottom: 1px solid var(--border-color);
@@ -92,7 +92,7 @@ body {
     align-items: center;
 }
 
-.admin-header h1 {
+.nav-brand h2 {
     background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -100,7 +100,7 @@ body {
     font-size: 1.5rem;
 }
 
-.admin-nav {
+.nav-links {
     display: flex;
     gap: 1rem;
     align-items: center;
@@ -114,6 +114,7 @@ body {
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .nav-btn:hover,
@@ -123,8 +124,8 @@ body {
 }
 
 .logout-btn {
-    background: var(--danger-color);
-    color: white;
+    background: var(--danger-color) !important;
+    color: white !important;
     border: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -133,9 +134,22 @@ body {
 }
 
 .logout-btn:hover {
-    background: #dc2626;
+    background: #dc2626 !important;
 }
 
+/* Unread Badge */
+.unread-badge {
+    background: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Main Content */
 .admin-main {
     flex: 1;
     padding: 2rem;
@@ -144,10 +158,58 @@ body {
     width: 100%;
 }
 
+.admin-view {
+    display: none;
+}
+
+.admin-view.active {
+    display: block;
+}
+
 .admin-view h2 {
     color: var(--text-light);
     margin-bottom: 2rem;
     font-size: 1.8rem;
+}
+
+/* View Header */
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.view-header h2 {
+    color: var(--text-light);
+    font-size: 1.8rem;
+}
+
+.view-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.refresh-btn,
+.mark-all-read-btn,
+.reply-btn,
+.back-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.refresh-btn:hover,
+.mark-all-read-btn:hover,
+.reply-btn:hover,
+.back-btn:hover {
+    background: var(--primary-dark);
 }
 
 /* Post Form */
@@ -157,6 +219,17 @@ body {
     border-radius: 12px;
     display: grid;
     gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    color: var(--text-light);
+    font-weight: 500;
 }
 
 .post-form input,
@@ -266,19 +339,137 @@ body {
     color: white;
 }
 
+.edit-btn:hover {
+    background: var(--primary-dark);
+}
+
 .delete-btn {
     background: var(--danger-color);
     color: white;
 }
 
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* Messages List */
+.message-item {
+    background: var(--dark-surface);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 4px solid transparent;
+    position: relative;
+}
+
+.message-item:hover {
+    background: #3a3a3c;
+    transform: translateY(-1px);
+}
+
+.message-item.unread {
+    border-left-color: var(--primary-color);
+    background: #2a3b4d;
+}
+
+.message-item.read {
+    opacity: 0.8;
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.message-header strong {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+.message-email {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+.message-date {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+.message-subject {
+    color: var(--text-light);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.message-preview {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.unread-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+/* Message Detail */
+.message-detail {
+    background: var(--dark-surface);
+    padding: 2rem;
+    border-radius: 8px;
+}
+
+.message-meta {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.meta-row {
+    margin-bottom: 0.5rem;
+    color: var(--text-light);
+}
+
+.meta-row strong {
+    display: inline-block;
+    width: 80px;
+    color: var(--text-muted);
+}
+
+.message-content h4 {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.message-body {
+    background: var(--dark-bg);
+    padding: 1.5rem;
+    border-radius: 6px;
+    color: var(--text-light);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-    .admin-header {
+    .admin-nav {
         flex-direction: column;
         gap: 1rem;
     }
     
-    .admin-nav {
+    .nav-links {
         flex-wrap: wrap;
         justify-content: center;
     }
@@ -287,13 +478,33 @@ body {
         padding: 1rem;
     }
     
+    .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
     .form-actions {
         flex-direction: column;
     }
     
-    .post-item {
+    .post-item,
+    .message-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+    }
+
+    .message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .message-date {
+        margin-left: 0;
+    }
+
+    .message-detail {
+        padding: 1rem;
     }
 }

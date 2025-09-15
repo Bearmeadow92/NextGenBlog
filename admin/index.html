@@ -4,69 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NextGenBlog Admin</title>
-    <link rel="stylesheet" href="/admin.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Login screen (shown when not authenticated) -->
-        <div id="login-screen" class="login-container">
-            <div class="login-card">
-                <h1>NextGenBlog Admin</h1>
-                <p>Secure admin access for your blog</p>
-                <button id="github-login" class="login-btn">
-                    Login with GitHub
-                </button>
-            </div>
-        </div>
-
-        <!-- Admin dashboard (shown when authenticated) -->
-        <div id="admin-dashboard" class="dashboard" style="display: none;">
-            <header class="admin-header">
-                <h1>NextGenBlog Admin</h1>
-                <div class="admin-nav">
-                    <button class="nav-btn active" data-view="posts">Posts</button>
-                    <button class="nav-btn" data-view="new-post">New Post</button>
-                    <button class="nav-btn" data-view="settings">Settings</button>
-                    <button id="logout-btn" class="logout-btn">Logout</button>
-                </div>
-            </header>
-
-            <main class="admin-main">
-                <!-- Posts view -->
-                <div id="posts-view" class="admin-view">
-                    <h2>Manage Posts</h2>
-                    <div id="posts-list">
-                        Loading posts...
-                    </div>
-                </div>
-
-                <!-- New post view -->
-                <div id="new-post-view" class="admin-view" style="display: none;">
-                    <h2>Create New Post</h2>
-                    <form id="post-form" class="post-form">
-                        <input type="text" id="post-title" placeholder="Post Title" required>
-                        <input type="date" id="post-date" required>
-                        <textarea id="post-description" placeholder="Brief description" required></textarea>
-                        <textarea id="post-content" placeholder="Write your post content in Markdown..." required></textarea>
-                        <div class="form-actions">
-                            <button type="submit" class="submit-btn">Publish Post</button>
-                            <button type="button" class="preview-btn">Preview</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Settings view -->
-                <div id="settings-view" class="admin-view" style="display: none;">
-                    <h2>Settings</h2>
-                    <p>Settings and configuration options coming soon...</p>
-                </div>
-            </main>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-content">
+            <h1>NextGenBlog Admin</h1>
+            <p>Admin access required</p>
+            <button id="github-login" class="login-btn">Login with GitHub</button>
         </div>
     </div>
 
-    <script src="/admin.js"></script>
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="dashboard">
+        <!-- Navigation -->
+        <nav class="admin-nav">
+            <div class="nav-brand">
+                <h2>Admin Dashboard</h2>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn" data-view="posts">Posts</button>
+                <button class="nav-btn" data-view="messages">
+                    Messages <span id="unread-badge" class="unread-badge" style="display: none;">0</span>
+                </button>
+                <button class="nav-btn" data-view="new-post">New Post</button>
+                <button class="nav-btn logout-btn" id="logout-btn">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Posts View -->
+            <div id="posts-view" class="admin-view">
+                <div class="view-header">
+                    <h2>Manage Posts</h2>
+                </div>
+                <div id="posts-list">
+                    <p>Loading posts...</p>
+                </div>
+            </div>
+
+            <!-- Messages View -->
+            <div id="messages-view" class="admin-view">
+                <div class="view-header">
+                    <h2>Contact Messages</h2>
+                    <div class="view-actions">
+                        <button class="refresh-btn" id="refresh-messages">Refresh</button>
+                        <button class="mark-all-read-btn" id="mark-all-read">Mark All Read</button>
+                    </div>
+                </div>
+                <div id="messages-list">
+                    <p>Loading messages...</p>
+                </div>
+            </div>
+
+            <!-- Message Detail View -->
+            <div id="message-detail-view" class="admin-view">
+                <div class="view-header">
+                    <button class="back-btn" id="back-to-messages">← Back to Messages</button>
+                    <h2>Message Details</h2>
+                    <div class="view-actions">
+                        <button class="reply-btn" id="reply-message">Reply</button>
+                        <button class="delete-btn" id="delete-message">Delete</button>
+                    </div>
+                </div>
+                <div id="message-detail-content">
+                    <!-- Message content will load here -->
+                </div>
+            </div>
+
+            <!-- New Post View -->
+            <div id="new-post-view" class="admin-view">
+                <div class="view-header">
+                    <h2>Create New Post</h2>
+                </div>
+                <form id="post-form" class="post-form">
+                    <div class="form-group">
+                        <label for="post-title">Title *</label>
+                        <input type="text" id="post-title" name="title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="post-date">Date *</label>
+                        <input type="date" id="post-date" name="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="post-description">Description *</label>
+                        <textarea id="post-description" name="description" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="post-content">Content (Markdown) *</label>
+                        <textarea id="post-content" name="content" rows="15" required></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="preview-btn">Preview</button>
+                        <button type="submit" class="submit-btn">Publish Post</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="admin.js"></script>
 </body>
 </html>

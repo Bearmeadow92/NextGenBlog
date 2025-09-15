@@ -23,7 +23,7 @@ async function initializeDatabaseSafely() {
     }
 }
 
-// Trust proxy for Railway (FIXES the rate limiting warning)
+// Trust proxy for Railway
 app.set('trust proxy', 1);
 
 // Security middleware with proper CSP
@@ -33,7 +33,7 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Allow marked.js CDN
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", "https://api.github.com", "https://github.com"],
             formAction: ["'self'", "https://github.com"],
@@ -64,46 +64,15 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// DEBUG ROUTE - Remove this after testing
-app.get('/debug/files', (req, res) => {
-    const fs = require('fs');
-    const path = require('path');
-    
-    try {
-        const publicDir = path.join(__dirname, 'public');
-        const imagesDir = path.join(__dirname, 'public', 'images');
-        
-        const publicFiles = fs.existsSync(publicDir) ? fs.readdirSync(publicDir) : ['public dir not found'];
-        const imageFiles = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir) : ['images dir not found'];
-        
-        res.json({
-            publicFiles,
-            imageFiles,
-            publicExists: fs.existsSync(publicDir),
-            imagesExists: fs.existsSync(imagesDir),
-            __dirname
-        });
-    } catch (error) {
-        res.json({ error: error.message });
-    }
-});
-
 // Serve admin assets (BEFORE admin routes)
 app.use('/admin.css', express.static(path.join(__dirname, 'admin', 'admin.css')));
 app.use('/admin.js', express.static(path.join(__dirname, 'admin', 'admin.js')));
 
 // API routes
 app.use('/api/auth', require('./api/auth'));
-app.use('/api/contact', require('./api/contact')); // CONTACT FORM ROUTE
-
-// Conditionally use database or GitHub API for posts
-if (process.env.DATABASE_URL) {
-    // Use database-powered posts API
-    app.use('/api/posts', require('./api/posts'));
-} else {
-    // Fall back to your original GitHub-based posts API
-    app.use('/api/posts', require('./api/posts'));
-}
+app.use('/api/contact', require('./api/contact'));
+app.use('/api/messages', require('./api/messages')); // NEW: Messages API for admin
+app.use('/api/posts', require('./api/posts'));
 
 // Admin interface route
 app.get('/admin', (req, res) => {

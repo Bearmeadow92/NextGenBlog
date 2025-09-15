@@ -2,7 +2,8 @@ class AdminApp {
     constructor() {
         this.token = null;
         this.currentView = 'posts';
-        this.editingPost = null; // Track if we're editing
+        this.editingPost = null;
+        this.currentMessage = null;
         this.init();
     }
 
@@ -74,6 +75,42 @@ class AdminApp {
             });
         }
 
+        // Messages buttons
+        const refreshBtn = document.getElementById('refresh-messages');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.loadMessages();
+            });
+        }
+
+        const markAllReadBtn = document.getElementById('mark-all-read');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', () => {
+                this.markAllMessagesRead();
+            });
+        }
+
+        const backToMessagesBtn = document.getElementById('back-to-messages');
+        if (backToMessagesBtn) {
+            backToMessagesBtn.addEventListener('click', () => {
+                this.switchView('messages');
+            });
+        }
+
+        const replyBtn = document.getElementById('reply-message');
+        if (replyBtn) {
+            replyBtn.addEventListener('click', () => {
+                this.replyToMessage();
+            });
+        }
+
+        const deleteMessageBtn = document.getElementById('delete-message');
+        if (deleteMessageBtn) {
+            deleteMessageBtn.addEventListener('click', () => {
+                this.deleteCurrentMessage();
+            });
+        }
+
         // Event delegation for dynamic buttons
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('edit-btn')) {
@@ -84,6 +121,11 @@ class AdminApp {
             if (e.target.classList.contains('delete-btn')) {
                 const filename = e.target.dataset.filename;
                 this.deletePost(filename);
+            }
+
+            if (e.target.classList.contains('message-item')) {
+                const messageId = e.target.dataset.messageId;
+                this.viewMessage(messageId);
             }
         });
     }
@@ -97,6 +139,7 @@ class AdminApp {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('admin-dashboard').style.display = 'flex';
         this.loadPosts();
+        this.loadUnreadCount();
     }
 
     logout() {
@@ -105,38 +148,41 @@ class AdminApp {
         this.showLogin();
     }
 
-switchView(view) {
-    // Update navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('logout-btn')) {
-                const view = e.target.dataset.view;
-                
-                // Only reset when explicitly clicking "New Post"
-                if (view === 'new-post') {
-                    this.resetPostForm();
-                }
-                
-                this.switchView(view);
-            }
+    switchView(view) {
+        // Hide all views
+        document.querySelectorAll('.admin-view').forEach(viewEl => {
+            viewEl.style.display = 'none';
         });
-    });
+        
+        // Show target view
+        const targetView = document.getElementById(`${view}-view`);
+        if (targetView) {
+            targetView.style.display = 'block';
+        }
 
-    // Show/hide views
-    document.querySelectorAll('.admin-view').forEach(viewEl => {
-        viewEl.style.display = 'none';
-    });
-    document.getElementById(`${view}-view`).style.display = 'block';
+        // Update navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        const activeBtn = document.querySelector(`[data-view="${view}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
 
-    this.currentView = view;
+        this.currentView = view;
 
-    // Load data for specific views
-    if (view === 'posts') {
-        this.loadPosts();
+        // Load data for specific views
+        if (view === 'posts') {
+            this.loadPosts();
+        } else if (view === 'messages') {
+            this.loadMessages();
+        } else if (view === 'new-post') {
+            this.resetPostForm();
+        }
     }
-    // Don't auto-reset here - let the calling code decide
-}
 
+    // Posts functionality (existing code)
     async loadPosts() {
         try {
             const response = await fetch('/api/posts', {
@@ -149,15 +195,13 @@ switchView(view) {
                 const posts = await response.json();
                 this.renderPostsList(posts);
             } else if (response.status === 401) {
-                console.error('Authentication failed, redirecting to login');
                 this.logout();
             } else {
-                console.error('Failed to load posts:', response.status);
-                document.getElementById('posts-list').innerHTML = '<p>Error loading posts. Please try again.</p>';
+                document.getElementById('posts-list').innerHTML = '<p>Error loading posts.</p>';
             }
         } catch (error) {
             console.error('Error loading posts:', error);
-            document.getElementById('posts-list').innerHTML = '<p>Error loading posts. Please check your connection.</p>';
+            document.getElementById('posts-list').innerHTML = '<p>Error loading posts.</p>';
         }
     }
 
@@ -183,12 +227,185 @@ switchView(view) {
         `).join('');
     }
 
+    // Messages functionality (new)
+    async loadMessages() {
+        try {
+            const response = await fetch('/api/messages', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const messages = await response.json();
+                this.renderMessagesList(messages);
+            } else if (response.status === 401) {
+                this.logout();
+            } else {
+                document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
+        }
+    }
+
+    renderMessagesList(messages) {
+        const container = document.getElementById('messages-list');
+        
+        if (messages.length === 0) {
+            container.innerHTML = '<p>No messages yet.</p>';
+            return;
+        }
+
+        container.innerHTML = messages.map(message => `
+            <div class="message-item ${message.isRead ? 'read' : 'unread'}" data-message-id="${message.id}">
+                <div class="message-info">
+                    <div class="message-header">
+                        <strong>${message.name}</strong>
+                        <span class="message-email">${message.email}</span>
+                        <span class="message-date">${new Date(message.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="message-subject">${message.subject}</div>
+                    <div class="message-preview">${message.message.substring(0, 100)}...</div>
+                </div>
+                ${!message.isRead ? '<div class="unread-indicator"></div>' : ''}
+            </div>
+        `).join('');
+    }
+
+    async viewMessage(messageId) {
+        try {
+            const response = await fetch(`/api/messages/${messageId}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const message = await response.json();
+                this.currentMessage = message;
+                this.renderMessageDetail(message);
+                this.switchView('message-detail');
+                
+                // Mark as read if unread
+                if (!message.isRead) {
+                    await this.markMessageRead(messageId);
+                }
+            } else {
+                alert('Error loading message');
+            }
+        } catch (error) {
+            console.error('Error loading message:', error);
+            alert('Error loading message');
+        }
+    }
+
+    renderMessageDetail(message) {
+        const container = document.getElementById('message-detail-content');
+        
+        container.innerHTML = `
+            <div class="message-detail">
+                <div class="message-meta">
+                    <div class="meta-row">
+                        <strong>From:</strong> ${message.name} &lt;${message.email}&gt;
+                    </div>
+                    <div class="meta-row">
+                        <strong>Subject:</strong> ${message.subject}
+                    </div>
+                    <div class="meta-row">
+                        <strong>Date:</strong> ${new Date(message.createdAt).toLocaleString()}
+                    </div>
+                </div>
+                <div class="message-content">
+                    <h4>Message:</h4>
+                    <div class="message-body">${message.message.replace(/\n/g, '<br>')}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    async markMessageRead(messageId) {
+        try {
+            await fetch(`/api/messages/${messageId}/read`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            this.loadUnreadCount();
+        } catch (error) {
+            console.error('Error marking message as read:', error);
+        }
+    }
+
+    async markAllMessagesRead() {
+        // This would require a new API endpoint, or we can iterate through unread messages
+        alert('Mark all read functionality - would need additional API endpoint');
+    }
+
+    replyToMessage() {
+        if (this.currentMessage) {
+            const mailtoLink = `mailto:${this.currentMessage.email}?subject=Re: ${this.currentMessage.subject}&body=Hi ${this.currentMessage.name},%0A%0A`;
+            window.open(mailtoLink);
+        }
+    }
+
+    async deleteCurrentMessage() {
+        if (!this.currentMessage) return;
+        
+        if (!confirm('Are you sure you want to delete this message?')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${this.currentMessage.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Message deleted successfully');
+                this.switchView('messages');
+                this.loadUnreadCount();
+            } else {
+                alert('Error deleting message');
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            alert('Error deleting message');
+        }
+    }
+
+    async loadUnreadCount() {
+        try {
+            const response = await fetch('/api/messages/count/unread', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const badge = document.getElementById('unread-badge');
+                if (data.unreadCount > 0) {
+                    badge.textContent = data.unreadCount;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading unread count:', error);
+        }
+    }
+
+    // Existing post functionality continues...
     resetPostForm() {
         document.getElementById('post-form').reset();
         document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
-        this.editingPost = null; // Clear edit mode
+        this.editingPost = null;
         
-        // Update form title
         document.querySelector('#new-post-view h2').textContent = 'Create New Post';
         document.querySelector('.submit-btn').textContent = 'Publish Post';
     }
@@ -254,17 +471,12 @@ switchView(view) {
             }
         } catch (error) {
             console.error('Error submitting post:', error);
-            alert(`Error ${this.editingPost ? 'updating' : 'publishing'} post. Please check your connection.`);
+            alert(`Error ${this.editingPost ? 'updating' : 'publishing'} post.`);
         }
     }
 
     async createNewPost(title, date, description, content) {
-        const postData = {
-            title,
-            date,
-            description,
-            body: content
-        };
+        const postData = { title, date, description, body: content };
 
         const response = await fetch('/api/posts', {
             method: 'POST',
@@ -279,21 +491,15 @@ switchView(view) {
             alert('Post published successfully!');
             this.switchView('posts');
         } else if (response.status === 401) {
-            alert('Authentication failed. Please log in again.');
             this.logout();
         } else {
             const errorData = await response.json();
-            alert(`Failed to publish post: ${errorData.error || 'Unknown error'}`);
+            alert(`Failed to publish post: ${errorData.error}`);
         }
     }
 
     async updateExistingPost(title, date, description, content) {
-        const postData = {
-            title,
-            date,
-            description,
-            body: content
-        };
+        const postData = { title, date, description, body: content };
 
         const response = await fetch(`/api/posts/${this.editingPost}`, {
             method: 'PUT',
@@ -308,71 +514,57 @@ switchView(view) {
             alert('Post updated successfully!');
             this.switchView('posts');
         } else if (response.status === 401) {
-            alert('Authentication failed. Please log in again.');
             this.logout();
         } else {
             const errorData = await response.json();
-            alert(`Failed to update post: ${errorData.error || 'Unknown error'}`);
+            alert(`Failed to update post: ${errorData.error}`);
         }
     }
 
     async deletePost(filename) {
-        if (!confirm('Are you sure you want to delete this post?')) {
-            return;
-        }
+        if (!confirm('Are you sure you want to delete this post?')) return;
 
         try {
             const response = await fetch(`/api/posts/${filename}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (response.ok) {
                 alert('Post deleted successfully!');
                 this.loadPosts();
             } else if (response.status === 401) {
-                alert('Authentication failed. Please log in again.');
                 this.logout();
             } else {
-                const errorData = await response.json();
-                alert(`Failed to delete post: ${errorData.error || 'Unknown error'}`);
+                alert('Failed to delete post');
             }
         } catch (error) {
             console.error('Error deleting post:', error);
-            alert('Error deleting post. Please check your connection.');
+            alert('Error deleting post');
         }
     }
 
-    // FIXED: Updated editPost to use database API instead of GitHub API
     async editPost(filename) {
         try {
             const response = await fetch(`/api/posts/${filename}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
             
             if (response.ok) {
                 const post = await response.json();
                 
-                // Fill the form with database data
                 document.getElementById('post-title').value = post.title || '';
                 document.getElementById('post-date').value = post.date || '';
                 document.getElementById('post-description').value = post.description || '';
                 document.getElementById('post-content').value = post.content || '';
                 
-                // Set edit mode - keep the same filename
                 this.editingPost = filename;
                 
-                // Update UI to show edit mode
                 document.querySelector('#new-post-view h2').textContent = 'Edit Post';
                 document.querySelector('.submit-btn').textContent = 'Update Post';
                 
                 this.switchView('new-post');
             } else if (response.status === 401) {
-                alert('Authentication failed. Please log in again.');
                 this.logout();
             } else {
                 alert('Error loading post for editing.');

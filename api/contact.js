@@ -1,5 +1,5 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
+const { Message } = require('../models/Post');
 const router = express.Router();
 
 // Contact form submission
@@ -24,48 +24,26 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Configure Gmail transporter
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.CONTACT_EMAIL,
-                pass: process.env.CONTACT_EMAIL_PASSWORD
-            }
+        // Save message to database
+        const newMessage = await Message.create({
+            name,
+            email,
+            subject,
+            message
         });
 
-        // Email content
-        const mailOptions = {
-            from: process.env.CONTACT_EMAIL,
-            to: 'hello@nextgentechnologist.com',
-            subject: `Contact Form: ${subject}`,
-            html: `
-                <h3>New Contact Form Submission</h3>
-                <p><strong>Name:</strong> ${name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Subject:</strong> ${subject}</p>
-                <p><strong>Message:</strong></p>
-                <div style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
-                    ${message.replace(/\n/g, '<br>')}
-                </div>
-                <hr>
-                <p><small>Sent from NextGenTechnologist.com contact form</small></p>
-            `,
-            replyTo: email
-        };
-
-        // Send email
-        await transporter.sendMail(mailOptions);
+        console.log('New contact message saved:', newMessage.id);
 
         res.json({ 
             success: true, 
-            message: 'Message sent successfully!' 
+            message: 'Message received! I\'ll get back to you soon.' 
         });
 
     } catch (error) {
         console.error('Contact form error:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'Failed to send message. Please try again later.' 
+            error: 'Failed to process message. Please try again later.' 
         });
     }
 });
