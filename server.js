@@ -71,7 +71,7 @@ app.use('/admin.js', express.static(path.join(__dirname, 'admin', 'admin.js')));
 // API routes
 app.use('/api/auth', require('./api/auth'));
 app.use('/api/contact', require('./api/contact'));
-app.use('/api/messages', require('./api/messages')); // NEW: Messages API for admin
+app.use('/api/messages', require('./api/messages'));
 app.use('/api/posts', require('./api/posts'));
 
 // Admin interface route

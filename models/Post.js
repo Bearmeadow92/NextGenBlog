@@ -85,6 +85,10 @@ const Message = sequelize.define('Message', {
     isRead: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    isArchived: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 }, {
     tableName: 'messages',

@@ -362,11 +362,31 @@ body {
     transition: all 0.2s;
     border-left: 4px solid transparent;
     position: relative;
+    border: 1px solid transparent; /* Add this */
 }
 
 .message-item:hover {
     background: #3a3a3c;
     transform: translateY(-1px);
+    border-color: var(--primary-color); /* Add this */
+    box-shadow: 0 4px 8px rgba(0, 122, 204, 0.2); /* Add this */
+}
+
+/* Add a visual indicator that it's clickable */
+.message-item::after {
+    content: "→";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.message-item:hover::after {
+    opacity: 1;
 }
 
 .message-item.unread {

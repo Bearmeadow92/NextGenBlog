@@ -83,13 +83,6 @@ class AdminApp {
             });
         }
 
-        const markAllReadBtn = document.getElementById('mark-all-read');
-        if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', () => {
-                this.markAllMessagesRead();
-            });
-        }
-
         const backToMessagesBtn = document.getElementById('back-to-messages');
         if (backToMessagesBtn) {
             backToMessagesBtn.addEventListener('click', () => {
@@ -101,6 +94,13 @@ class AdminApp {
         if (replyBtn) {
             replyBtn.addEventListener('click', () => {
                 this.replyToMessage();
+            });
+        }
+
+        const archiveBtn = document.getElementById('archive-message');
+        if (archiveBtn) {
+            archiveBtn.addEventListener('click', () => {
+                this.archiveCurrentMessage();
             });
         }
 
@@ -118,13 +118,15 @@ class AdminApp {
                 this.editPost(filename);
             }
             
-            if (e.target.classList.contains('delete-btn')) {
+            if (e.target.classList.contains('delete-btn') && e.target.dataset.filename) {
                 const filename = e.target.dataset.filename;
                 this.deletePost(filename);
             }
 
-            if (e.target.classList.contains('message-item')) {
-                const messageId = e.target.dataset.messageId;
+            // Make entire message clickable
+            if (e.target.closest('.message-item')) {
+                const messageItem = e.target.closest('.message-item');
+                const messageId = messageItem.dataset.messageId;
                 this.viewMessage(messageId);
             }
         });
@@ -182,7 +184,7 @@ class AdminApp {
         }
     }
 
-    // Posts functionality (existing code)
+    // Posts functionality
     async loadPosts() {
         try {
             const response = await fetch('/api/posts', {
@@ -227,180 +229,6 @@ class AdminApp {
         `).join('');
     }
 
-    // Messages functionality (new)
-    async loadMessages() {
-        try {
-            const response = await fetch('/api/messages', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                const messages = await response.json();
-                this.renderMessagesList(messages);
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
-            }
-        } catch (error) {
-            console.error('Error loading messages:', error);
-            document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
-        }
-    }
-
-    renderMessagesList(messages) {
-        const container = document.getElementById('messages-list');
-        
-        if (messages.length === 0) {
-            container.innerHTML = '<p>No messages yet.</p>';
-            return;
-        }
-
-        container.innerHTML = messages.map(message => `
-            <div class="message-item ${message.isRead ? 'read' : 'unread'}" data-message-id="${message.id}">
-                <div class="message-info">
-                    <div class="message-header">
-                        <strong>${message.name}</strong>
-                        <span class="message-email">${message.email}</span>
-                        <span class="message-date">${new Date(message.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div class="message-subject">${message.subject}</div>
-                    <div class="message-preview">${message.message.substring(0, 100)}...</div>
-                </div>
-                ${!message.isRead ? '<div class="unread-indicator"></div>' : ''}
-            </div>
-        `).join('');
-    }
-
-    async viewMessage(messageId) {
-        try {
-            const response = await fetch(`/api/messages/${messageId}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                const message = await response.json();
-                this.currentMessage = message;
-                this.renderMessageDetail(message);
-                this.switchView('message-detail');
-                
-                // Mark as read if unread
-                if (!message.isRead) {
-                    await this.markMessageRead(messageId);
-                }
-            } else {
-                alert('Error loading message');
-            }
-        } catch (error) {
-            console.error('Error loading message:', error);
-            alert('Error loading message');
-        }
-    }
-
-    renderMessageDetail(message) {
-        const container = document.getElementById('message-detail-content');
-        
-        container.innerHTML = `
-            <div class="message-detail">
-                <div class="message-meta">
-                    <div class="meta-row">
-                        <strong>From:</strong> ${message.name} &lt;${message.email}&gt;
-                    </div>
-                    <div class="meta-row">
-                        <strong>Subject:</strong> ${message.subject}
-                    </div>
-                    <div class="meta-row">
-                        <strong>Date:</strong> ${new Date(message.createdAt).toLocaleString()}
-                    </div>
-                </div>
-                <div class="message-content">
-                    <h4>Message:</h4>
-                    <div class="message-body">${message.message.replace(/\n/g, '<br>')}</div>
-                </div>
-            </div>
-        `;
-    }
-
-    async markMessageRead(messageId) {
-        try {
-            await fetch(`/api/messages/${messageId}/read`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-            this.loadUnreadCount();
-        } catch (error) {
-            console.error('Error marking message as read:', error);
-        }
-    }
-
-    async markAllMessagesRead() {
-        // This would require a new API endpoint, or we can iterate through unread messages
-        alert('Mark all read functionality - would need additional API endpoint');
-    }
-
-    replyToMessage() {
-        if (this.currentMessage) {
-            const mailtoLink = `mailto:${this.currentMessage.email}?subject=Re: ${this.currentMessage.subject}&body=Hi ${this.currentMessage.name},%0A%0A`;
-            window.open(mailtoLink);
-        }
-    }
-
-    async deleteCurrentMessage() {
-        if (!this.currentMessage) return;
-        
-        if (!confirm('Are you sure you want to delete this message?')) return;
-
-        try {
-            const response = await fetch(`/api/messages/${this.currentMessage.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                alert('Message deleted successfully');
-                this.switchView('messages');
-                this.loadUnreadCount();
-            } else {
-                alert('Error deleting message');
-            }
-        } catch (error) {
-            console.error('Error deleting message:', error);
-            alert('Error deleting message');
-        }
-    }
-
-    async loadUnreadCount() {
-        try {
-            const response = await fetch('/api/messages/count/unread', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const badge = document.getElementById('unread-badge');
-                if (data.unreadCount > 0) {
-                    badge.textContent = data.unreadCount;
-                    badge.style.display = 'inline';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        } catch (error) {
-            console.error('Error loading unread count:', error);
-        }
-    }
-
-    // Existing post functionality continues...
     resetPostForm() {
         document.getElementById('post-form').reset();
         document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
@@ -572,6 +400,206 @@ class AdminApp {
         } catch (error) {
             console.error('Error loading post for editing:', error);
             alert('Error loading post for editing.');
+        }
+    }
+
+    // Messages functionality
+    async loadMessages() {
+        try {
+            const response = await fetch('/api/messages', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const messages = await response.json();
+                this.renderMessagesList(messages);
+            } else if (response.status === 401) {
+                this.logout();
+            } else {
+                document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
+        }
+    }
+
+    renderMessagesList(messages) {
+        const container = document.getElementById('messages-list');
+        
+        if (messages.length === 0) {
+            container.innerHTML = '<p>No messages yet.</p>';
+            return;
+        }
+
+        container.innerHTML = messages.map(message => `
+            <div class="message-item ${message.isRead ? 'read' : 'unread'}" data-message-id="${message.id}">
+                <div class="message-info">
+                    <div class="message-header">
+                        <strong>${message.name}</strong>
+                        <span class="message-email">${message.email}</span>
+                        <span class="message-date">${new Date(message.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="message-subject">${message.subject}</div>
+                    <div class="message-preview">${message.message.substring(0, 100)}...</div>
+                </div>
+                ${!message.isRead ? '<div class="unread-indicator"></div>' : ''}
+            </div>
+        `).join('');
+    }
+
+    async viewMessage(messageId) {
+        try {
+            const response = await fetch(`/api/messages/${messageId}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const message = await response.json();
+                this.currentMessage = message;
+                this.renderMessageDetail(message);
+                this.switchView('message-detail');
+                
+                // Mark as read if unread
+                if (!message.isRead) {
+                    await this.markMessageRead(messageId);
+                }
+            } else {
+                alert('Error loading message');
+            }
+        } catch (error) {
+            console.error('Error loading message:', error);
+            alert('Error loading message');
+        }
+    }
+
+    renderMessageDetail(message) {
+        const container = document.getElementById('message-detail-content');
+        
+        container.innerHTML = `
+            <div class="message-detail">
+                <div class="message-meta">
+                    <div class="meta-row">
+                        <strong>From:</strong> ${message.name} &lt;${message.email}&gt;
+                    </div>
+                    <div class="meta-row">
+                        <strong>Subject:</strong> ${message.subject}
+                    </div>
+                    <div class="meta-row">
+                        <strong>Date:</strong> ${new Date(message.createdAt).toLocaleString()}
+                    </div>
+                </div>
+                <div class="message-content">
+                    <h4>Message:</h4>
+                    <div class="message-body">${message.message.replace(/\n/g, '<br>')}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    async markMessageRead(messageId) {
+        try {
+            await fetch(`/api/messages/${messageId}/read`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            this.loadUnreadCount();
+        } catch (error) {
+            console.error('Error marking message as read:', error);
+        }
+    }
+
+    replyToMessage() {
+        if (this.currentMessage) {
+            const mailtoLink = `mailto:${this.currentMessage.email}?subject=Re: ${this.currentMessage.subject}&body=Hi ${this.currentMessage.name},%0A%0A`;
+            window.open(mailtoLink);
+        }
+    }
+
+    async archiveCurrentMessage() {
+        if (!this.currentMessage) return;
+        
+        if (!confirm('Archive this message?')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${this.currentMessage.id}/archive`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Message archived successfully');
+                this.switchView('messages');
+                this.loadUnreadCount();
+            } else if (response.status === 401) {
+                this.logout();
+            } else {
+                const errorData = await response.json();
+                alert(`Error archiving message: ${errorData.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Error archiving message:', error);
+            alert('Error archiving message');
+        }
+    }
+
+    async deleteCurrentMessage() {
+        if (!this.currentMessage) return;
+        
+        if (!confirm('Are you sure you want to delete this message?')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${this.currentMessage.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Message deleted successfully');
+                this.switchView('messages');
+                this.loadUnreadCount();
+            } else if (response.status === 401) {
+                this.logout();
+            } else {
+                const errorData = await response.json();
+                alert(`Error deleting message: ${errorData.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            alert('Error deleting message. Please check your connection.');
+        }
+    }
+
+    async loadUnreadCount() {
+        try {
+            const response = await fetch('/api/messages/count/unread', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const badge = document.getElementById('unread-badge');
+                if (data.unreadCount > 0) {
+                    badge.textContent = data.unreadCount;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading unread count:', error);
         }
     }
 }
