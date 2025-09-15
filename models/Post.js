@@ -9,7 +9,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
             rejectUnauthorized: false
         }
     },
-    logging: false // Set to console.log to see SQL queries
+    logging: false
 });
 
 // Define Post model
@@ -47,19 +47,10 @@ const Post = sequelize.define('Post', {
     }
 }, {
     tableName: 'posts',
-    timestamps: true,
-    indexes: [
-        {
-            fields: ['date'],
-            order: [['date', 'DESC']]
-        },
-        {
-            fields: ['slug']
-        }
-    ]
+    timestamps: true
 });
 
-// Define Message model for contact form submissions (NO isArchived field for now)
+// SIMPLE Message model - only essential fields
 const Message = sequelize.define('Message', {
     id: {
         type: DataTypes.INTEGER,
@@ -88,7 +79,7 @@ const Message = sequelize.define('Message', {
     }
 }, {
     tableName: 'messages',
-    timestamps: true // adds createdAt and updatedAt
+    timestamps: true
 });
 
 // Generate slug from title and date for posts
@@ -108,8 +99,7 @@ async function initDatabase() {
         await sequelize.authenticate();
         console.log('Database connection established successfully.');
         
-        // Sync database - this will create tables and ADD MISSING COLUMNS
-        await sequelize.sync({ alter: true });
+        await sequelize.sync();
         console.log('Database synchronized.');
         
         console.log('Database connected successfully');

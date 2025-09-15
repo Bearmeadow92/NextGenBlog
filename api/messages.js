@@ -9,7 +9,6 @@ router.get('/', authenticateToken, async (req, res) => {
         const messages = await Message.findAll({
             order: [['createdAt', 'DESC']]
         });
-
         res.json(messages);
     } catch (error) {
         console.error('Error fetching messages:', error);
@@ -21,13 +20,10 @@ router.get('/', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-        
         const message = await Message.findByPk(id);
-
         if (!message) {
             return res.status(404).json({ error: 'Message not found' });
         }
-
         res.json(message);
     } catch (error) {
         console.error('Error fetching message:', error);
@@ -35,65 +31,19 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Mark message as read
-router.put('/:id/read', authenticateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const message = await Message.findByPk(id);
-
-        if (!message) {
-            return res.status(404).json({ error: 'Message not found' });
-        }
-
-        await message.update({ isRead: true });
-
-        res.json({ 
-            success: true, 
-            message: 'Message marked as read' 
-        });
-
-    } catch (error) {
-        console.error('Error marking message as read:', error);
-        res.status(500).json({ error: 'Failed to mark message as read' });
-    }
-});
-
 // Delete message
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-        
         const message = await Message.findByPk(id);
-
         if (!message) {
             return res.status(404).json({ error: 'Message not found' });
         }
-
         await message.destroy();
-
-        res.json({ 
-            success: true, 
-            message: 'Message deleted successfully' 
-        });
-
+        res.json({ success: true, message: 'Message deleted successfully' });
     } catch (error) {
         console.error('Error deleting message:', error);
         res.status(500).json({ error: 'Failed to delete message' });
-    }
-});
-
-// Get unread message count
-router.get('/count/unread', authenticateToken, async (req, res) => {
-    try {
-        const unreadCount = await Message.count({
-            where: { isRead: false }
-        });
-
-        res.json({ unreadCount });
-    } catch (error) {
-        console.error('Error counting unread messages:', error);
-        res.status(500).json({ error: 'Failed to count unread messages' });
     }
 });
 
