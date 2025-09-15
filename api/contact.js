@@ -18,8 +18,6 @@ router.post('/', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
-        console.log('Contact form submission received:', { name, email, subject });
-
         // Basic validation
         if (!name || !email || !subject || !message) {
             return res.status(400).json({ 
@@ -39,19 +37,11 @@ router.post('/', async (req, res) => {
 
         // Configure email transporter
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
+            service: 'gmail',
             auth: {
                 user: process.env.CONTACT_EMAIL,
                 pass: process.env.CONTACT_EMAIL_PASSWORD
-            },
-            tls: {
-                rejectUnauthorized: false
-            },
-            connectionTimeout: 60000,
-            greetingTimeout: 30000,
-            socketTimeout: 60000
+            }
         });
 
         // Email content
@@ -74,35 +64,19 @@ router.post('/', async (req, res) => {
             replyTo: email
         };
 
-        // HYBRID APPROACH: Try email first, fallback to logging
-        try {
-            console.log('Attempting to send email...');
-            await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully to hello@nextgentechnologist.com');
-        } catch (emailError) {
-            // If email fails, log the submission instead
-            console.log('Email sending failed, logging submission instead');
-            console.log('Email error:', emailError.message);
-            console.log('=== CONTACT FORM SUBMISSION (EMAIL FAILED) ===');
-            console.log(`Name: ${name}`);
-            console.log(`Email: ${email}`);
-            console.log(`Subject: ${subject}`);
-            console.log(`Message: ${message}`);
-            console.log(`Submitted: ${new Date().toISOString()}`);
-            console.log('===============================================');
-        }
+        // Send email
+        await transporter.sendMail(mailOptions);
 
-        // Always return success to user (regardless of email success/failure)
         res.json({ 
             success: true, 
-            message: 'Message received! I\'ll get back to you soon.' 
+            message: 'Message sent successfully!' 
         });
 
     } catch (error) {
         console.error('Contact form error:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'Failed to process message. Please try again later.' 
+            error: 'Failed to send message. Please try again later.' 
         });
     }
 });
