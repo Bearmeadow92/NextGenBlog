@@ -1,10 +1,9 @@
 const express = require('express');
 const { Message } = require('../models/Post');
-const authenticateToken = require('../middleware/auth');
 const router = express.Router();
 
-// Get all messages
-router.get('/', authenticateToken, async (req, res) => {
+// Get all messages - NO AUTH
+router.get('/', async (req, res) => {
     try {
         const messages = await Message.findAll({
             order: [['createdAt', 'DESC']]
@@ -16,8 +15,8 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 });
 
-// Get single message
-router.get('/:id', authenticateToken, async (req, res) => {
+// Get single message - NO AUTH
+router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const message = await Message.findByPk(id);
@@ -31,8 +30,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Delete message
-router.delete('/:id', authenticateToken, async (req, res) => {
+// Delete message - NO AUTH
+router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const message = await Message.findByPk(id);
