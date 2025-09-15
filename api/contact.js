@@ -2,17 +2,6 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 
-// Test route
-router.get('/test', (req, res) => {
-    res.json({ 
-        message: 'Contact API is reachable',
-        envVars: {
-            emailSet: !!process.env.CONTACT_EMAIL,
-            passwordSet: !!process.env.CONTACT_EMAIL_PASSWORD
-        }
-    });
-});
-
 // Contact form submission
 router.post('/', async (req, res) => {
     try {
@@ -35,7 +24,7 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Configure email transporter
+        // Configure Gmail transporter
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
