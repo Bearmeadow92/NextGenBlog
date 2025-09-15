@@ -22,14 +22,13 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Create message in database (WITH isArchived field)
+        // Create message in database (without isArchived)
         const newMessage = await Message.create({
             name: name.trim(),
             email: email.trim().toLowerCase(),
             subject: subject.trim(),
             message: message.trim(),
-            isRead: false,
-            isArchived: false
+            isRead: false
         });
 
         console.log('Contact form submitted:', {

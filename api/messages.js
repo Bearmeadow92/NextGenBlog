@@ -3,15 +3,10 @@ const { Message } = require('../models/Post');
 const authenticateToken = require('../middleware/auth');
 const router = express.Router();
 
-// Get all messages (excluding archived by default)
+// Get all messages
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const { includeArchived } = req.query;
-        
-        const whereClause = includeArchived === 'true' ? {} : { isArchived: false };
-        
         const messages = await Message.findAll({
-            where: whereClause,
             order: [['createdAt', 'DESC']]
         });
 
@@ -64,54 +59,6 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
     }
 });
 
-// Archive message
-router.put('/:id/archive', authenticateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const message = await Message.findByPk(id);
-
-        if (!message) {
-            return res.status(404).json({ error: 'Message not found' });
-        }
-
-        await message.update({ isArchived: true });
-
-        res.json({ 
-            success: true, 
-            message: 'Message archived successfully' 
-        });
-
-    } catch (error) {
-        console.error('Error archiving message:', error);
-        res.status(500).json({ error: 'Failed to archive message' });
-    }
-});
-
-// Unarchive message
-router.put('/:id/unarchive', authenticateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const message = await Message.findByPk(id);
-
-        if (!message) {
-            return res.status(404).json({ error: 'Message not found' });
-        }
-
-        await message.update({ isArchived: false });
-
-        res.json({ 
-            success: true, 
-            message: 'Message unarchived successfully' 
-        });
-
-    } catch (error) {
-        console.error('Error unarchiving message:', error);
-        res.status(500).json({ error: 'Failed to unarchive message' });
-    }
-});
-
 // Delete message
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
@@ -136,14 +83,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Get unread message count (excluding archived)
+// Get unread message count
 router.get('/count/unread', authenticateToken, async (req, res) => {
     try {
         const unreadCount = await Message.count({
-            where: { 
-                isRead: false,
-                isArchived: false 
-            }
+            where: { isRead: false }
         });
 
         res.json({ unreadCount });

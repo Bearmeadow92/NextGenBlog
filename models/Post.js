@@ -59,7 +59,7 @@ const Post = sequelize.define('Post', {
     ]
 });
 
-// Define Message model for contact form submissions (WITH isArchived field)
+// Define Message model for contact form submissions (NO isArchived field for now)
 const Message = sequelize.define('Message', {
     id: {
         type: DataTypes.INTEGER,
@@ -83,10 +83,6 @@ const Message = sequelize.define('Message', {
         allowNull: false
     },
     isRead: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-    },
-    isArchived: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     }
