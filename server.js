@@ -104,10 +104,12 @@ sequelize.sync({ alter: true }).then(() => {
 // END OF TEMPORARY FIX
 // ============================================
 
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use('/admin', express.static('admin')); 
 
 // Session configuration
 app.use(session({
