@@ -199,7 +199,9 @@ function setupContactForm() {
             // Disable submit button and show loading
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending...';
-            feedback.style.display = 'none';
+            if (feedback) {
+                feedback.style.display = 'none';
+            }
 
             try {
                 console.log('Sending POST request to /api/contact...');
@@ -219,25 +221,31 @@ function setupContactForm() {
 
                 if (result.success) {
                     // Success
-                    feedback.className = 'contact-feedback success';
-                    feedback.textContent = result.message;
-                    feedback.style.display = 'block';
+                    if (feedback) {
+                        feedback.className = 'contact-feedback success';
+                        feedback.textContent = result.message;
+                        feedback.style.display = 'block';
+                    }
                     
                     // Reset form
                     contactForm.reset();
                 } else {
                     // Error from server
-                    feedback.className = 'contact-feedback error';
-                    feedback.textContent = result.error || 'Failed to send message';
-                    feedback.style.display = 'block';
+                    if (feedback) {
+                        feedback.className = 'contact-feedback error';
+                        feedback.textContent = result.error || 'Failed to send message';
+                        feedback.style.display = 'block';
+                    }
                 }
 
             } catch (error) {
                 console.error('Network error:', error);
                 // Network error
-                feedback.className = 'contact-feedback error';
-                feedback.textContent = 'Network error. Please check your connection and try again.';
-                feedback.style.display = 'block';
+                if (feedback) {
+                    feedback.className = 'contact-feedback error';
+                    feedback.textContent = 'Network error. Please check your connection and try again.';
+                    feedback.style.display = 'block';
+                }
             }
 
             // Re-enable submit button
