@@ -192,6 +192,11 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // Admin routes
+// Serve static files
+app.use(express.static('public'));
+app.use('/admin-assets', express.static('admin'));  // Changed path to avoid conflict
+
+// Admin routes
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
