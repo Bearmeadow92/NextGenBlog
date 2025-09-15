@@ -1,88 +1,70 @@
-class AdminApp {
+class BlogAdmin {
     constructor() {
-        this.token = null;
+        this.token = localStorage.getItem('admin_token');
         this.currentView = 'posts';
-        this.editingPost = null;
+        this.posts = [];
+        this.messages = [];
         this.currentMessage = null;
+        this.editingPost = null;
+        this.showArchived = false;
+        
         this.init();
     }
 
     init() {
-        // Check for token in URL (from OAuth callback)
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+        this.setupEventListeners();
         
-        if (token) {
-            this.token = token;
-            localStorage.setItem('admin_token', token);
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-            // Check for stored token
-            this.token = localStorage.getItem('admin_token');
-        }
-
         if (this.token) {
             this.showDashboard();
+            this.loadPosts();
+            this.loadMessages();
+            this.loadUnreadCount();
         } else {
             this.showLogin();
         }
-
-        this.setupEventListeners();
     }
 
     setupEventListeners() {
-        // Login button
+        // Login
         const loginBtn = document.getElementById('github-login');
         if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-                window.location.href = '/api/auth/github';
-            });
+            loginBtn.addEventListener('click', () => this.login());
         }
 
-        // Logout button
+        // Logout
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                this.logout();
-            });
+            logoutBtn.addEventListener('click', () => this.logout());
         }
 
-        // Navigation buttons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
+        // Navigation
+        document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('logout-btn')) {
-                    this.switchView(e.target.dataset.view);
-                }
+                this.switchView(e.target.dataset.view);
             });
         });
 
-        // Post form
-        const postForm = document.getElementById('post-form');
-        if (postForm) {
-            postForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handlePostSubmit();
-            });
+        // Refresh buttons
+        const refreshPostsBtn = document.getElementById('refresh-posts');
+        if (refreshPostsBtn) {
+            refreshPostsBtn.addEventListener('click', () => this.loadPosts());
         }
 
-        // Preview button
-        const previewBtn = document.querySelector('.preview-btn');
-        if (previewBtn) {
-            previewBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.previewPost();
-            });
+        const refreshMessagesBtn = document.getElementById('refresh-messages');
+        if (refreshMessagesBtn) {
+            refreshMessagesBtn.addEventListener('click', () => this.loadMessages());
         }
 
-        // Messages buttons
-        const refreshBtn = document.getElementById('refresh-messages');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
+        // Show archived toggle
+        const showArchivedToggle = document.getElementById('show-archived');
+        if (showArchivedToggle) {
+            showArchivedToggle.addEventListener('change', (e) => {
+                this.showArchived = e.target.checked;
                 this.loadMessages();
             });
         }
 
+        // Back to messages
         const backToMessagesBtn = document.getElementById('back-to-messages');
         if (backToMessagesBtn) {
             backToMessagesBtn.addEventListener('click', () => {
@@ -90,10 +72,11 @@ class AdminApp {
             });
         }
 
+        // Message actions
         const replyBtn = document.getElementById('reply-message');
         if (replyBtn) {
             replyBtn.addEventListener('click', () => {
-                this.replyToMessage();
+                this.replyToCurrentMessage();
             });
         }
 
@@ -104,32 +87,116 @@ class AdminApp {
             });
         }
 
-        const deleteMessageBtn = document.getElementById('delete-message');
-        if (deleteMessageBtn) {
-            deleteMessageBtn.addEventListener('click', () => {
+        const unarchiveBtn = document.getElementById('unarchive-message');
+        if (unarchiveBtn) {
+            unarchiveBtn.addEventListener('click', () => {
+                this.unarchiveCurrentMessage();
+            });
+        }
+
+        const deleteBtn = document.getElementById('delete-message');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
                 this.deleteCurrentMessage();
             });
         }
 
-        // Event delegation for dynamic buttons
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('edit-btn')) {
-                const filename = e.target.dataset.filename;
-                this.editPost(filename);
+        // Post forms
+        const newPostForm = document.getElementById('new-post-form');
+        if (newPostForm) {
+            newPostForm.addEventListener('submit', (e) => this.handleNewPost(e));
+        }
+
+        const editPostForm = document.getElementById('edit-post-form');
+        if (editPostForm) {
+            editPostForm.addEventListener('submit', (e) => this.handleEditPost(e));
+        }
+
+        // Cancel edit
+        const cancelEditBtn = document.getElementById('cancel-edit');
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', () => {
+                this.switchView('posts');
+            });
+        }
+
+        // Preview buttons
+        const previewBtn = document.getElementById('preview-post');
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => this.previewPost());
+        }
+
+        const previewEditBtn = document.getElementById('preview-edit');
+        if (previewEditBtn) {
+            previewEditBtn.addEventListener('click', () => this.previewEditPost());
+        }
+
+        // Modal close
+        const modal = document.getElementById('preview-modal');
+        if (modal) {
+            const closeBtn = modal.querySelector('.close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
             }
             
-            if (e.target.classList.contains('delete-btn') && e.target.dataset.filename) {
-                const filename = e.target.dataset.filename;
-                this.deletePost(filename);
-            }
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
 
-            // Make entire message clickable
-            if (e.target.closest('.message-item')) {
-                const messageItem = e.target.closest('.message-item');
-                const messageId = messageItem.dataset.messageId;
-                this.viewMessage(messageId);
+        // Set today's date as default
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            if (!input.value) {
+                input.value = new Date().toISOString().split('T')[0];
             }
         });
+    }
+
+    async login() {
+        const loginBtn = document.getElementById('github-login');
+        const originalText = loginBtn.textContent;
+        
+        try {
+            loginBtn.textContent = 'Checking...';
+            loginBtn.disabled = true;
+
+            const response = await fetch('/api/auth/github', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.token) {
+                this.token = data.token;
+                localStorage.setItem('admin_token', this.token);
+                this.showDashboard();
+                this.loadPosts();
+                this.loadMessages();
+                this.loadUnreadCount();
+            } else {
+                alert('Authentication failed');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Login failed');
+        } finally {
+            loginBtn.textContent = originalText;
+            loginBtn.disabled = false;
+        }
+    }
+
+    logout() {
+        this.token = null;
+        localStorage.removeItem('admin_token');
+        this.showLogin();
     }
 
     showLogin() {
@@ -140,443 +207,72 @@ class AdminApp {
     showDashboard() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('admin-dashboard').style.display = 'flex';
-        this.loadPosts();
-        this.loadUnreadCount();
     }
 
-    logout() {
-        this.token = null;
-        localStorage.removeItem('admin_token');
-        this.showLogin();
-    }
-
-    switchView(view) {
+    switchView(viewName) {
         // Hide all views
-        document.querySelectorAll('.admin-view').forEach(viewEl => {
-            viewEl.style.display = 'none';
+        document.querySelectorAll('.admin-view').forEach(view => {
+            view.style.display = 'none';
         });
-        
-        // Show target view
-        const targetView = document.getElementById(`${view}-view`);
-        if (targetView) {
-            targetView.style.display = 'block';
-        }
 
         // Update navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        
-        const activeBtn = document.querySelector(`[data-view="${view}"]`);
+
+        // Show selected view
+        const targetView = document.getElementById(`${viewName}-view`);
+        if (targetView) {
+            targetView.style.display = 'block';
+        }
+
+        // Mark active nav button
+        const activeBtn = document.querySelector(`[data-view="${viewName}"]`);
         if (activeBtn) {
             activeBtn.classList.add('active');
         }
 
-        this.currentView = view;
+        this.currentView = viewName;
 
-        // Load data for specific views
-        if (view === 'posts') {
-            this.loadPosts();
-        } else if (view === 'messages') {
+        // Load data if needed
+        if (viewName === 'messages' && this.messages.length === 0) {
             this.loadMessages();
-        } else if (view === 'new-post') {
-            this.resetPostForm();
         }
     }
 
-    // Posts functionality
     async loadPosts() {
         try {
-            const response = await fetch('/api/posts', {
+            const response = await fetch('/api/admin/posts', {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
 
             if (response.ok) {
-                const posts = await response.json();
-                this.renderPostsList(posts);
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                document.getElementById('posts-list').innerHTML = '<p>Error loading posts.</p>';
+                this.posts = await response.json();
+                this.renderPosts();
             }
         } catch (error) {
             console.error('Error loading posts:', error);
-            document.getElementById('posts-list').innerHTML = '<p>Error loading posts.</p>';
         }
     }
 
-    renderPostsList(posts) {
-        const container = document.getElementById('posts-list');
-        
-        if (posts.length === 0) {
-            container.innerHTML = '<p>No posts yet. Create your first post!</p>';
-            return;
-        }
-
-        container.innerHTML = posts.map(post => `
-            <div class="post-item">
-                <div class="post-info">
-                    <h3>${post.title}</h3>
-                    <p>${post.date} • ${post.description}</p>
-                </div>
-                <div class="post-actions">
-                    <button class="edit-btn" data-filename="${post.filename}">Edit</button>
-                    <button class="delete-btn" data-filename="${post.filename}">Delete</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    resetPostForm() {
-        document.getElementById('post-form').reset();
-        document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
-        this.editingPost = null;
-        
-        document.querySelector('#new-post-view h2').textContent = 'Create New Post';
-        document.querySelector('.submit-btn').textContent = 'Publish Post';
-    }
-
-    previewPost() {
-        const title = document.getElementById('post-title').value;
-        const date = document.getElementById('post-date').value;
-        const description = document.getElementById('post-description').value;
-        const content = document.getElementById('post-content').value;
-
-        if (!title || !content) {
-            alert('Please fill in title and content to preview.');
-            return;
-        }
-
-        const previewWindow = window.open('', 'preview', 'width=800,height=600,scrollbars=yes');
-        
-        const previewHTML = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Preview: ${title}</title>
-                <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-                <style>
-                    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                    h1 { color: #333; }
-                    .meta { color: #666; font-style: italic; margin-bottom: 20px; }
-                    .content { line-height: 1.6; }
-                </style>
-            </head>
-            <body>
-                <h1>${title}</h1>
-                <div class="meta">Published: ${date}</div>
-                <div class="meta">${description}</div>
-                <div class="content" id="content"></div>
-                <script>
-                    document.getElementById('content').innerHTML = marked.parse(\`${content.replace(/`/g, '\\`')}\`);
-                </script>
-            </body>
-            </html>
-        `;
-        
-        previewWindow.document.write(previewHTML);
-        previewWindow.document.close();
-    }
-
-    async handlePostSubmit() {
-        const title = document.getElementById('post-title').value;
-        const date = document.getElementById('post-date').value;
-        const description = document.getElementById('post-description').value;
-        const content = document.getElementById('post-content').value;
-
-        if (!title || !date || !description || !content) {
-            alert('Please fill in all fields.');
-            return;
-        }
-
-        try {
-            if (this.editingPost) {
-                await this.updateExistingPost(title, date, description, content);
-            } else {
-                await this.createNewPost(title, date, description, content);
-            }
-        } catch (error) {
-            console.error('Error submitting post:', error);
-            alert(`Error ${this.editingPost ? 'updating' : 'publishing'} post.`);
-        }
-    }
-
-    async createNewPost(title, date, description, content) {
-        const postData = { title, date, description, body: content };
-
-        const response = await fetch('/api/posts', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-            },
-            body: JSON.stringify(postData)
-        });
-
-        if (response.ok) {
-            alert('Post published successfully!');
-            this.switchView('posts');
-        } else if (response.status === 401) {
-            this.logout();
-        } else {
-            const errorData = await response.json();
-            alert(`Failed to publish post: ${errorData.error}`);
-        }
-    }
-
-    async updateExistingPost(title, date, description, content) {
-        const postData = { title, date, description, body: content };
-
-        const response = await fetch(`/api/posts/${this.editingPost}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-            },
-            body: JSON.stringify(postData)
-        });
-
-        if (response.ok) {
-            alert('Post updated successfully!');
-            this.switchView('posts');
-        } else if (response.status === 401) {
-            this.logout();
-        } else {
-            const errorData = await response.json();
-            alert(`Failed to update post: ${errorData.error}`);
-        }
-    }
-
-    async deletePost(filename) {
-        if (!confirm('Are you sure you want to delete this post?')) return;
-
-        try {
-            const response = await fetch(`/api/posts/${filename}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                alert('Post deleted successfully!');
-                this.loadPosts();
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                alert('Failed to delete post');
-            }
-        } catch (error) {
-            console.error('Error deleting post:', error);
-            alert('Error deleting post');
-        }
-    }
-
-    async editPost(filename) {
-        try {
-            const response = await fetch(`/api/posts/${filename}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            
-            if (response.ok) {
-                const post = await response.json();
-                
-                document.getElementById('post-title').value = post.title || '';
-                document.getElementById('post-date').value = post.date || '';
-                document.getElementById('post-description').value = post.description || '';
-                document.getElementById('post-content').value = post.content || '';
-                
-                this.editingPost = filename;
-                
-                document.querySelector('#new-post-view h2').textContent = 'Edit Post';
-                document.querySelector('.submit-btn').textContent = 'Update Post';
-                
-                this.switchView('new-post');
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                alert('Error loading post for editing.');
-            }
-        } catch (error) {
-            console.error('Error loading post for editing:', error);
-            alert('Error loading post for editing.');
-        }
-    }
-
-    // Messages functionality
     async loadMessages() {
         try {
-            const response = await fetch('/api/messages', {
+            const url = this.showArchived ? '/api/messages?includeArchived=true' : '/api/messages';
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
 
             if (response.ok) {
-                const messages = await response.json();
-                this.renderMessagesList(messages);
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
+                this.messages = await response.json();
+                this.renderMessages();
+                this.loadUnreadCount();
             }
         } catch (error) {
             console.error('Error loading messages:', error);
-            document.getElementById('messages-list').innerHTML = '<p>Error loading messages.</p>';
-        }
-    }
-
-    renderMessagesList(messages) {
-        const container = document.getElementById('messages-list');
-        
-        if (messages.length === 0) {
-            container.innerHTML = '<p>No messages yet.</p>';
-            return;
-        }
-
-        container.innerHTML = messages.map(message => `
-            <div class="message-item ${message.isRead ? 'read' : 'unread'}" data-message-id="${message.id}">
-                <div class="message-info">
-                    <div class="message-header">
-                        <strong>${message.name}</strong>
-                        <span class="message-email">${message.email}</span>
-                        <span class="message-date">${new Date(message.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div class="message-subject">${message.subject}</div>
-                    <div class="message-preview">${message.message.substring(0, 100)}...</div>
-                </div>
-                ${!message.isRead ? '<div class="unread-indicator"></div>' : ''}
-            </div>
-        `).join('');
-    }
-
-    async viewMessage(messageId) {
-        try {
-            const response = await fetch(`/api/messages/${messageId}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                const message = await response.json();
-                this.currentMessage = message;
-                this.renderMessageDetail(message);
-                this.switchView('message-detail');
-                
-                // Mark as read if unread
-                if (!message.isRead) {
-                    await this.markMessageRead(messageId);
-                }
-            } else {
-                alert('Error loading message');
-            }
-        } catch (error) {
-            console.error('Error loading message:', error);
-            alert('Error loading message');
-        }
-    }
-
-    renderMessageDetail(message) {
-        const container = document.getElementById('message-detail-content');
-        
-        container.innerHTML = `
-            <div class="message-detail">
-                <div class="message-meta">
-                    <div class="meta-row">
-                        <strong>From:</strong> ${message.name} &lt;${message.email}&gt;
-                    </div>
-                    <div class="meta-row">
-                        <strong>Subject:</strong> ${message.subject}
-                    </div>
-                    <div class="meta-row">
-                        <strong>Date:</strong> ${new Date(message.createdAt).toLocaleString()}
-                    </div>
-                </div>
-                <div class="message-content">
-                    <h4>Message:</h4>
-                    <div class="message-body">${message.message.replace(/\n/g, '<br>')}</div>
-                </div>
-            </div>
-        `;
-    }
-
-    async markMessageRead(messageId) {
-        try {
-            await fetch(`/api/messages/${messageId}/read`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-            this.loadUnreadCount();
-        } catch (error) {
-            console.error('Error marking message as read:', error);
-        }
-    }
-
-    replyToMessage() {
-        if (this.currentMessage) {
-            const mailtoLink = `mailto:${this.currentMessage.email}?subject=Re: ${this.currentMessage.subject}&body=Hi ${this.currentMessage.name},%0A%0A`;
-            window.open(mailtoLink);
-        }
-    }
-
-    async archiveCurrentMessage() {
-        if (!this.currentMessage) return;
-        
-        if (!confirm('Archive this message?')) return;
-
-        try {
-            const response = await fetch(`/api/messages/${this.currentMessage.id}/archive`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                alert('Message archived successfully');
-                this.switchView('messages');
-                this.loadUnreadCount();
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                const errorData = await response.json();
-                alert(`Error archiving message: ${errorData.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Error archiving message:', error);
-            alert('Error archiving message');
-        }
-    }
-
-    async deleteCurrentMessage() {
-        if (!this.currentMessage) return;
-        
-        if (!confirm('Are you sure you want to delete this message?')) return;
-
-        try {
-            const response = await fetch(`/api/messages/${this.currentMessage.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (response.ok) {
-                alert('Message deleted successfully');
-                this.switchView('messages');
-                this.loadUnreadCount();
-            } else if (response.status === 401) {
-                this.logout();
-            } else {
-                const errorData = await response.json();
-                alert(`Error deleting message: ${errorData.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Error deleting message:', error);
-            alert('Error deleting message. Please check your connection.');
         }
     }
 
@@ -602,6 +298,373 @@ class AdminApp {
             console.error('Error loading unread count:', error);
         }
     }
+
+    renderPosts() {
+        const container = document.getElementById('posts-list');
+        if (!container) return;
+
+        if (this.posts.length === 0) {
+            container.innerHTML = '<p class="no-content">No posts found.</p>';
+            return;
+        }
+
+        container.innerHTML = this.posts.map(post => `
+            <div class="post-item">
+                <div class="post-info">
+                    <h3>${post.title}</h3>
+                    <p class="post-meta">
+                        <span class="post-date">${new Date(post.date).toLocaleDateString()}</span>
+                        <span class="post-slug">/${post.slug}</span>
+                    </p>
+                    <p class="post-description">${post.description}</p>
+                </div>
+                <div class="post-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="blogAdmin.editPost(${post.id})">
+                        Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="blogAdmin.deletePost(${post.id})">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderMessages() {
+        const container = document.getElementById('messages-list');
+        if (!container) return;
+
+        if (this.messages.length === 0) {
+            container.innerHTML = '<p class="no-content">No messages found.</p>';
+            return;
+        }
+
+        container.innerHTML = this.messages.map(message => `
+            <div class="message-item ${message.isRead ? 'read' : 'unread'} ${message.isArchived ? 'archived' : ''}" onclick="blogAdmin.viewMessage(${message.id})">
+                <div class="message-header">
+                    <span class="message-name">${message.name}</span>
+                    <span class="message-email">${message.email}</span>
+                    <span class="message-date">${new Date(message.createdAt).toLocaleDateString()}</span>
+                    ${message.isArchived ? '<span class="archived-label">Archived</span>' : ''}
+                </div>
+                <div class="message-subject">${message.subject}</div>
+                <div class="message-preview">${message.message.substring(0, 100)}${message.message.length > 100 ? '...' : ''}</div>
+                ${!message.isRead ? '<div class="unread-indicator"></div>' : ''}
+                <div class="message-hover-arrow">→</div>
+            </div>
+        `).join('');
+    }
+
+    async viewMessage(messageId) {
+        const message = this.messages.find(m => m.id === messageId);
+        if (!message) return;
+
+        this.currentMessage = message;
+
+        // Mark as read if not already
+        if (!message.isRead) {
+            try {
+                await fetch(`/api/messages/${messageId}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                });
+                message.isRead = true;
+                this.loadUnreadCount();
+            } catch (error) {
+                console.error('Error marking message as read:', error);
+            }
+        }
+
+        // Show/hide archive buttons based on current state
+        const archiveBtn = document.getElementById('archive-message');
+        const unarchiveBtn = document.getElementById('unarchive-message');
+        
+        if (message.isArchived) {
+            archiveBtn.style.display = 'none';
+            unarchiveBtn.style.display = 'inline-block';
+        } else {
+            archiveBtn.style.display = 'inline-block';
+            unarchiveBtn.style.display = 'none';
+        }
+
+        // Render message details
+        const container = document.getElementById('message-detail-content');
+        if (container) {
+            container.innerHTML = `
+                <div class="message-detail">
+                    <div class="message-meta">
+                        <div class="meta-item">
+                            <label>From:</label>
+                            <span>${message.name} &lt;${message.email}&gt;</span>
+                        </div>
+                        <div class="meta-item">
+                            <label>Subject:</label>
+                            <span>${message.subject}</span>
+                        </div>
+                        <div class="meta-item">
+                            <label>Date:</label>
+                            <span>${new Date(message.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div class="meta-item">
+                            <label>Status:</label>
+                            <span class="status-badges">
+                                ${message.isRead ? '<span class="status-badge read">Read</span>' : '<span class="status-badge unread">Unread</span>'}
+                                ${message.isArchived ? '<span class="status-badge archived">Archived</span>' : '<span class="status-badge active">Active</span>'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="message-body">
+                        <label>Message:</label>
+                        <div class="message-text">${message.message.replace(/\n/g, '<br>')}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        this.switchView('message-detail');
+    }
+
+    replyToCurrentMessage() {
+        if (!this.currentMessage) return;
+
+        const subject = this.currentMessage.subject.startsWith('Re:') 
+            ? this.currentMessage.subject 
+            : `Re: ${this.currentMessage.subject}`;
+
+        const mailtoLink = `mailto:${this.currentMessage.email}?subject=${encodeURIComponent(subject)}`;
+        window.open(mailtoLink);
+    }
+
+    async archiveCurrentMessage() {
+        if (!this.currentMessage) return;
+
+        if (!confirm('Archive this message?')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${this.currentMessage.id}/archive`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Message archived successfully');
+                this.currentMessage.isArchived = true;
+                this.switchView('messages');
+                this.loadMessages();
+                this.loadUnreadCount();
+            } else {
+                alert('Error archiving message');
+            }
+        } catch (error) {
+            console.error('Error archiving message:', error);
+            alert('Error archiving message');
+        }
+    }
+
+    async unarchiveCurrentMessage() {
+        if (!this.currentMessage) return;
+
+        if (!confirm('Unarchive this message?')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${this.currentMessage.id}/unarchive`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Message unarchived successfully');
+                this.currentMessage.isArchived = false;
+                this.switchView('messages');
+                this.loadMessages();
+                this.loadUnreadCount();
+            } else {
+                alert('Error unarchiving message');
+            }
+        } catch (error) {
+            console.error('Error unarchiving message:', error);
+            alert('Error unarchiving message');
+        }
+    }
+
+    async deleteCurrentMessage() {
+        if (!this.currentMessage) return;
+
+        if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${this.currentMessage.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Message deleted successfully');
+                this.switchView('messages');
+                this.loadMessages();
+                this.loadUnreadCount();
+            } else {
+                alert('Error deleting message');
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            alert('Error deleting message');
+        }
+    }
+
+    async handleNewPost(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const postData = {
+            title: formData.get('title'),
+            date: formData.get('date'),
+            description: formData.get('description'),
+            content: formData.get('content')
+        };
+
+        try {
+            const response = await fetch('/api/admin/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(postData)
+            });
+
+            if (response.ok) {
+                alert('Post created successfully!');
+                e.target.reset();
+                this.loadPosts();
+                this.switchView('posts');
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error creating post:', error);
+            alert('Error creating post');
+        }
+    }
+
+    async editPost(postId) {
+        const post = this.posts.find(p => p.id === postId);
+        if (!post) return;
+
+        this.editingPost = post;
+
+        // Populate edit form
+        document.getElementById('edit-post-title').value = post.title;
+        document.getElementById('edit-post-date').value = post.date;
+        document.getElementById('edit-post-description').value = post.description;
+        document.getElementById('edit-post-content').value = post.content;
+
+        this.switchView('edit-post');
+    }
+
+    async handleEditPost(e) {
+        e.preventDefault();
+        
+        if (!this.editingPost) return;
+
+        const formData = new FormData(e.target);
+        const postData = {
+            title: formData.get('title'),
+            date: formData.get('date'),
+            description: formData.get('description'),
+            content: formData.get('content')
+        };
+
+        try {
+            const response = await fetch(`/api/admin/posts/${this.editingPost.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(postData)
+            });
+
+            if (response.ok) {
+                alert('Post updated successfully!');
+                this.loadPosts();
+                this.switchView('posts');
+                this.editingPost = null;
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error updating post:', error);
+            alert('Error updating post');
+        }
+    }
+
+    async deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post?')) return;
+
+        try {
+            const response = await fetch(`/api/admin/posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Post deleted successfully!');
+                this.loadPosts();
+            } else {
+                alert('Error deleting post');
+            }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            alert('Error deleting post');
+        }
+    }
+
+    previewPost() {
+        const title = document.getElementById('post-title').value;
+        const content = document.getElementById('post-content').value;
+        this.showPreview(title, content);
+    }
+
+    previewEditPost() {
+        const title = document.getElementById('edit-post-title').value;
+        const content = document.getElementById('edit-post-content').value;
+        this.showPreview(title, content);
+    }
+
+    showPreview(title, content) {
+        const modal = document.getElementById('preview-modal');
+        const previewContent = document.getElementById('preview-content');
+        
+        // Simple markdown-to-HTML conversion for preview
+        const htmlContent = content
+            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+            .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+            .replace(/\*(.*)\*/gim, '<em>$1</em>')
+            .replace(/\n/gim, '<br>');
+
+        previewContent.innerHTML = `
+            <h1>${title}</h1>
+            <div class="preview-body">${htmlContent}</div>
+        `;
+
+        modal.style.display = 'block';
+    }
 }
 
-const adminApp = new AdminApp();
+// Initialize the admin interface
+const blogAdmin = new BlogAdmin();

@@ -7,43 +7,47 @@ router.post('/', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
-        // Basic validation
+        // Validate required fields
         if (!name || !email || !subject || !message) {
             return res.status(400).json({ 
-                success: false, 
                 error: 'All fields are required' 
             });
         }
 
-        // Email validation
+        // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({ 
-                success: false, 
-                error: 'Please enter a valid email address' 
+                error: 'Please provide a valid email address' 
             });
         }
 
-        // Save message to database
+        // Create message in database (WITH isArchived field)
         const newMessage = await Message.create({
-            name,
-            email,
-            subject,
-            message
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            subject: subject.trim(),
+            message: message.trim(),
+            isRead: false,
+            isArchived: false
         });
 
-        console.log('New contact message saved:', newMessage.id);
+        console.log('Contact form submitted:', {
+            id: newMessage.id,
+            name: newMessage.name,
+            email: newMessage.email,
+            subject: newMessage.subject
+        });
 
         res.json({ 
             success: true, 
-            message: 'Message received! I\'ll get back to you soon.' 
+            message: 'Thank you for your message! I\'ll get back to you soon.' 
         });
 
     } catch (error) {
         console.error('Contact form error:', error);
         res.status(500).json({ 
-            success: false, 
-            error: 'Failed to process message. Please try again later.' 
+            error: 'Something went wrong. Please try again later.' 
         });
     }
 });

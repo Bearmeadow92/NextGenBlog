@@ -1,13 +1,17 @@
 const express = require('express');
 const { Message } = require('../models/Post');
-const { authenticateToken } = require('./middleware');
+const authenticateToken = require('../middleware/auth');
 const router = express.Router();
 
-// Get all messages (authenticated - for admin)
+// Get all messages (excluding archived by default)
 router.get('/', authenticateToken, async (req, res) => {
     try {
+        const { includeArchived } = req.query;
+        
+        const whereClause = includeArchived === 'true' ? {} : { isArchived: false };
+        
         const messages = await Message.findAll({
-            where: { isArchived: false }, // Only show non-archived messages
+            where: whereClause,
             order: [['createdAt', 'DESC']]
         });
 
@@ -18,7 +22,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 });
 
-// Get single message by ID
+// Get single message
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
@@ -55,8 +59,8 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error updating message:', error);
-        res.status(500).json({ error: 'Failed to update message' });
+        console.error('Error marking message as read:', error);
+        res.status(500).json({ error: 'Failed to mark message as read' });
     }
 });
 
@@ -84,11 +88,35 @@ router.put('/:id/archive', authenticateToken, async (req, res) => {
     }
 });
 
+// Unarchive message
+router.put('/:id/unarchive', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const message = await Message.findByPk(id);
+
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        await message.update({ isArchived: false });
+
+        res.json({ 
+            success: true, 
+            message: 'Message unarchived successfully' 
+        });
+
+    } catch (error) {
+        console.error('Error unarchiving message:', error);
+        res.status(500).json({ error: 'Failed to unarchive message' });
+    }
+});
+
 // Delete message
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-
+        
         const message = await Message.findByPk(id);
 
         if (!message) {
@@ -108,13 +136,13 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Get unread message count
+// Get unread message count (excluding archived)
 router.get('/count/unread', authenticateToken, async (req, res) => {
     try {
         const unreadCount = await Message.count({
             where: { 
                 isRead: false,
-                isArchived: false // Only count non-archived messages
+                isArchived: false 
             }
         });
 
@@ -122,21 +150,6 @@ router.get('/count/unread', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error counting unread messages:', error);
         res.status(500).json({ error: 'Failed to count unread messages' });
-    }
-});
-
-// Get archived messages
-router.get('/archived/list', authenticateToken, async (req, res) => {
-    try {
-        const archivedMessages = await Message.findAll({
-            where: { isArchived: true },
-            order: [['createdAt', 'DESC']]
-        });
-
-        res.json(archivedMessages);
-    } catch (error) {
-        console.error('Error fetching archived messages:', error);
-        res.status(500).json({ error: 'Failed to fetch archived messages' });
     }
 });
 

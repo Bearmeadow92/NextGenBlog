@@ -36,75 +36,114 @@
         <!-- Main Content -->
         <main class="admin-main">
             <!-- Posts View -->
-            <div id="posts-view" class="admin-view">
+            <div class="admin-view" id="posts-view">
                 <div class="view-header">
                     <h2>Manage Posts</h2>
+                    <button class="btn btn-primary" id="refresh-posts">Refresh</button>
                 </div>
-                <div id="posts-list">
-                    <p>Loading posts...</p>
+                <div class="posts-container">
+                    <div id="posts-list"></div>
                 </div>
             </div>
 
             <!-- Messages View -->
-            <div id="messages-view" class="admin-view">
+            <div class="admin-view" id="messages-view" style="display: none;">
                 <div class="view-header">
                     <h2>Contact Messages</h2>
-                    <div class="view-actions">
-                        <button class="refresh-btn" id="refresh-messages">Refresh</button>
-                    </div>
+                    <button class="btn btn-secondary" id="refresh-messages">Refresh</button>
                 </div>
-                <div id="messages-list">
-                    <p>Loading messages...</p>
+                <div class="messages-container">
+                    <div id="messages-list"></div>
                 </div>
             </div>
 
             <!-- Message Detail View -->
-            <div id="message-detail-view" class="admin-view">
+            <div class="admin-view" id="message-detail-view" style="display: none;">
                 <div class="view-header">
-                    <button class="back-btn" id="back-to-messages">← Back to Messages</button>
+                    <button class="btn btn-secondary" id="back-to-messages">← Back to Messages</button>
                     <h2>Message Details</h2>
-                    <div class="view-actions">
-                        <button class="reply-btn" id="reply-message">Reply</button>
-                        <button class="archive-btn" id="archive-message">Archive</button>
-                        <button class="delete-btn" id="delete-message">Delete</button>
-                    </div>
                 </div>
-                <div id="message-detail-content">
-                    <!-- Message content will load here -->
+                <div class="message-detail-container">
+                    <div id="message-detail-content"></div>
+                    <div class="message-actions">
+                        <button class="btn btn-primary" id="reply-message">Reply via Email</button>
+                        <button class="btn btn-warning" id="archive-message" style="display: none;">Archive</button>
+                        <button class="btn btn-info" id="unarchive-message" style="display: none;">Unarchive</button>
+                        <button class="btn btn-danger" id="delete-message">Delete Message</button>
+                    </div>
                 </div>
             </div>
 
             <!-- New Post View -->
-            <div id="new-post-view" class="admin-view">
+            <div class="admin-view" id="new-post-view" style="display: none;">
                 <div class="view-header">
                     <h2>Create New Post</h2>
                 </div>
-                <form id="post-form" class="post-form">
+                <form id="new-post-form" class="post-form">
                     <div class="form-group">
-                        <label for="post-title">Title *</label>
+                        <label for="post-title">Title:</label>
                         <input type="text" id="post-title" name="title" required>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="post-date">Date *</label>
+                        <label for="post-date">Date:</label>
                         <input type="date" id="post-date" name="date" required>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="post-description">Description *</label>
-                        <textarea id="post-description" name="description" rows="3" required></textarea>
+                        <label for="post-description">Description:</label>
+                        <textarea id="post-description" name="description" required placeholder="Brief description of the post"></textarea>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="post-content">Content (Markdown) *</label>
-                        <textarea id="post-content" name="content" rows="15" required></textarea>
+                        <label for="post-content">Content (Markdown):</label>
+                        <textarea id="post-content" name="content" required placeholder="Write your post content in Markdown..."></textarea>
                     </div>
-                    
                     <div class="form-actions">
-                        <button type="button" class="preview-btn">Preview</button>
-                        <button type="submit" class="submit-btn">Publish Post</button>
+                        <button type="submit" class="btn btn-primary">Create Post</button>
+                        <button type="button" class="btn btn-secondary" id="preview-post">Preview</button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Edit Post View -->
+            <div class="admin-view" id="edit-post-view" style="display: none;">
+                <div class="view-header">
+                    <h2>Edit Post</h2>
+                    <button class="btn btn-secondary" id="cancel-edit">Cancel</button>
+                </div>
+                <form id="edit-post-form" class="post-form">
+                    <div class="form-group">
+                        <label for="edit-post-title">Title:</label>
+                        <input type="text" id="edit-post-title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-post-date">Date:</label>
+                        <input type="date" id="edit-post-date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-post-description">Description:</label>
+                        <textarea id="edit-post-description" name="description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-post-content">Content (Markdown):</label>
+                        <textarea id="edit-post-content" name="content" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Update Post</button>
+                        <button type="button" class="btn btn-secondary" id="preview-edit">Preview</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preview Modal -->
+            <div id="preview-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Post Preview</h3>
+                        <span class="close">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div id="preview-content"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

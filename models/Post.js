@@ -59,7 +59,7 @@ const Post = sequelize.define('Post', {
     ]
 });
 
-// Define Message model for contact form submissions
+// Define Message model for contact form submissions (WITH isArchived field)
 const Message = sequelize.define('Message', {
     id: {
         type: DataTypes.INTEGER,
@@ -112,12 +112,21 @@ async function initDatabase() {
         await sequelize.authenticate();
         console.log('Database connection established successfully.');
         
-        // Create tables if they don't exist
-        await sequelize.sync();
+        // Sync database - this will create tables and ADD MISSING COLUMNS
+        await sequelize.sync({ alter: true });
         console.log('Database synchronized.');
+        
+        console.log('Database connected successfully');
+        return true;
     } catch (error) {
         console.error('Unable to connect to the database:', error);
+        throw error;
     }
 }
 
-module.exports = { Post, Message, sequelize, initDatabase };
+module.exports = {
+    Post,
+    Message,
+    initDatabase,
+    sequelize
+};
