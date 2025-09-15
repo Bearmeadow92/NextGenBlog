@@ -99,7 +99,8 @@ async function initDatabase() {
         await sequelize.authenticate();
         console.log('Database connection established successfully.');
         
-        await sequelize.sync();
+        // IMPORTANT: alter: true will add missing columns
+        await sequelize.sync({ alter: true });
         console.log('Database synchronized.');
         
         console.log('Database connected successfully');
