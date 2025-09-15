@@ -404,6 +404,23 @@ body {
     opacity: 1;
 }
 
+.message-actions-quick {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: none;
+    gap: 0.25rem;
+}
+
+.message-item:hover .message-actions-quick {
+    display: flex;
+}
+
+.message-actions-quick .btn {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+}
+
 /* Message detail view */
 .message-detail-container {
     max-width: 800px;

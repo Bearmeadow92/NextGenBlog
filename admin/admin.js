@@ -351,6 +351,10 @@ class BlogAdmin {
                 <div class="message-preview">${message.message.substring(0, 100)}${message.message.length > 100 ? '...' : ''}</div>
                 ${!message.isRead ? '<div class="unread-indicator"></div>' : ''}
                 <div class="message-hover-arrow">→</div>
+                <div class="message-actions-quick">
+                    <button class="btn btn-xs btn-warning" onclick="event.stopPropagation(); blogAdmin.archiveMessage(${message.id})" ${message.isArchived ? 'style="display:none"' : ''}>Archive</button>
+                    <button class="btn btn-xs btn-danger" onclick="event.stopPropagation(); blogAdmin.deleteMessage(${message.id})">Delete</button>
+                </div>
             </div>
         `).join('');
     }
@@ -372,6 +376,7 @@ class BlogAdmin {
                 });
                 message.isRead = true;
                 this.loadUnreadCount();
+                this.renderMessages(); // Re-render to show read status
             } catch (error) {
                 console.error('Error marking message as read:', error);
             }
@@ -435,6 +440,55 @@ class BlogAdmin {
 
         const mailtoLink = `mailto:${this.currentMessage.email}?subject=${encodeURIComponent(subject)}`;
         window.open(mailtoLink);
+    }
+
+    // Quick archive from message list
+    async archiveMessage(messageId) {
+        try {
+            const response = await fetch(`/api/messages/${messageId}/archive`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const message = this.messages.find(m => m.id === messageId);
+                if (message) message.isArchived = true;
+                this.renderMessages();
+                this.loadUnreadCount();
+            } else {
+                alert('Error archiving message');
+            }
+        } catch (error) {
+            console.error('Error archiving message:', error);
+            alert('Error archiving message');
+        }
+    }
+
+    // Quick delete from message list
+    async deleteMessage(messageId) {
+        if (!confirm('Are you sure you want to delete this message?')) return;
+
+        try {
+            const response = await fetch(`/api/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                this.messages = this.messages.filter(m => m.id !== messageId);
+                this.renderMessages();
+                this.loadUnreadCount();
+            } else {
+                alert('Error deleting message');
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            alert('Error deleting message');
+        }
     }
 
     async archiveCurrentMessage() {
