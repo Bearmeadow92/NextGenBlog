@@ -118,15 +118,24 @@ passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: process.env.NODE_ENV === 'production' 
-        ? "https://nextgentechnologist.com/auth/github/callback"  // No www, no /api
+        ? "https://nextgentechnologist.com/auth/github/callback"
         : "http://localhost:3000/auth/github/callback"
 }, async (accessToken, refreshToken, profile, done) => {
+    console.log('=== GITHUB OAUTH DEBUG ===');
+    console.log('GitHub Username:', profile.username);
+    console.log('GitHub ID:', profile.id);
+    console.log('GITHUB_USERNAME env:', process.env.GITHUB_USERNAME);
+    
     // Only allow your GitHub username from environment variable
     const ALLOWED_USERS = [process.env.GITHUB_USERNAME || 'Bearmeadow92'];
+    console.log('Allowed users:', ALLOWED_USERS);
+    console.log('Is user allowed?', ALLOWED_USERS.includes(profile.username));
     
     if (ALLOWED_USERS.includes(profile.username)) {
+        console.log('✅ User authorized:', profile.username);
         return done(null, profile);
     } else {
+        console.log('❌ User REJECTED:', profile.username);
         return done(null, false, { message: 'Unauthorized user' });
     }
 }));
@@ -188,18 +197,36 @@ app.get('/admin', (req, res) => {
 });
 
 // GitHub OAuth routes
-app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+app.get('/auth/github', (req, res, next) => {
+    console.log('=== Starting GitHub OAuth flow ===');
+    passport.authenticate('github', { scope: ['user:email'] })(req, res, next);
+});
 
-app.get('/auth/github/callback',
+app.get('/auth/github/callback', (req, res, next) => {
+    console.log('=== GitHub Callback Hit ===');
+    console.log('Query params:', req.query);
+    
     passport.authenticate('github', { 
         failureRedirect: '/admin',
-        failureFlash: false 
-    }),
-    (req, res) => {
-        console.log('OAuth success! User:', req.user?.username);
-        res.redirect('/admin');
-    }
-);
+        failureMessage: true 
+    })(req, res, next, (err, user, info) => {
+        console.log('Auth result - Error:', err, 'User:', user?.username, 'Info:', info);
+        
+        if (err || !user) {
+            console.log('❌ Authentication FAILED');
+            return res.redirect('/admin?error=auth_failed');
+        }
+        
+        req.login(user, (loginErr) => {
+            if (loginErr) {
+                console.log('❌ Login FAILED:', loginErr);
+                return res.redirect('/admin?error=login_failed');
+            }
+            console.log('✅ Login SUCCESS for:', user.username);
+            res.redirect('/admin');
+        });
+    });
+});
 
 app.get('/auth/logout', (req, res) => {
     req.logout((err) => {
