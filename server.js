@@ -122,7 +122,7 @@ passport.use(new GitHubStrategy({
         : "http://localhost:3000/auth/github/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     // Only allow your GitHub username
-    const ALLOWED_USERS = [process.env.GITHUB_USERNAME || 'your-github-username'];
+    const ALLOWED_USERS = [process.env.GITHUB_USERNAME || 'Bearmeadow92'];
     
     if (ALLOWED_USERS.includes(profile.username)) {
         return done(null, profile);
