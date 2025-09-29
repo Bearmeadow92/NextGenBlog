@@ -153,41 +153,10 @@ class BlogAdmin {
         });
     }
 
-    async login() {
-        const loginBtn = document.getElementById('github-login');
-        const originalText = loginBtn.textContent;
-        
-        try {
-            loginBtn.textContent = 'Checking...';
-            loginBtn.disabled = true;
-
-            const response = await fetch('/api/auth/github', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-
-            if (data.token) {
-                this.token = data.token;
-                localStorage.setItem('admin_token', this.token);
-                this.showDashboard();
-                this.loadPosts();
-                this.loadMessages();
-                this.loadUnreadCount();
-            } else {
-                alert('Authentication failed');
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Login failed');
-        } finally {
-            loginBtn.textContent = originalText;
-            loginBtn.disabled = false;
-        }
-    }
+async login() {
+    // OAuth requires a browser redirect, not a fetch request
+    window.location.href = '/auth/github';
+}
 
     logout() {
         this.token = null;
