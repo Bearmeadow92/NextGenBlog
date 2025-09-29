@@ -117,11 +117,11 @@ app.use(passport.session());
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: process.env.NODE_ENV === 'development' 
-        ? "https://www.nextgentechnologist.com/api/auth/github/callback"
+    callbackURL: process.env.NODE_ENV === 'production' 
+        ? "https://nextgentechnologist.com/auth/github/callback"  // No www, no /api
         : "http://localhost:3000/auth/github/callback"
 }, async (accessToken, refreshToken, profile, done) => {
-    // Only allow your GitHub username
+    // Only allow your GitHub username from environment variable
     const ALLOWED_USERS = [process.env.GITHUB_USERNAME || 'Bearmeadow92'];
     
     if (ALLOWED_USERS.includes(profile.username)) {
