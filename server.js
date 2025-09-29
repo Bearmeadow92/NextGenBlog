@@ -191,8 +191,12 @@ app.get('/admin', (req, res) => {
 app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
 
 app.get('/auth/github/callback',
-    passport.authenticate('github', { failureRedirect: '/admin' }),
+    passport.authenticate('github', { 
+        failureRedirect: '/admin',
+        failureFlash: false 
+    }),
     (req, res) => {
+        console.log('OAuth success! User:', req.user?.username);
         res.redirect('/admin');
     }
 );
